@@ -196,7 +196,7 @@ jobs:
       # -------------------------------------------------------------------------
       - name: Health check (GET /api/health)
         env:
-          API_BASE_URL: ${{ secrets.APP_URL }}
+          API_BASE_URL: ${{ secrets.APP_URL || 'https://myntra-ai-review-discovery-engine.vercel.app' }}
         run: |
           set -euo pipefail
           echo "::group::GET /api/health"
