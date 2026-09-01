@@ -1,0 +1,67 @@
+import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { errorResponse } from "@/lib/rbac";
+
+export const dynamic = "force-dynamic";
+
+// GET /api/auth/me — return the authenticated user + their projects.
+export async function GET() {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return Response.json({ user: null, projects: [] });
+    }
+    const user = await db.user.findUnique({
+      where: { id: session.sub },
+      select: { id: true, email: true, name: true, authProvider: true },
+    });
+    if (!user) {
+      return Response.json({ user: null, projects: [] });
+    }
+
+    // Self-healing rename: if an older project name exists, migrate it to Myntra.
+    const oldProjects = await db.project.findMany({
+      where: {
+        OR: [
+          { name: "Blinkit Review Discovery Enginer" },
+          { name: "Blinkit Review Discovery Engine" },
+        ],
+      },
+    });
+    for (const p of oldProjects) {
+      await db.project.update({
+        where: { id: p.id },
+        data: {
+          name: "Myntra Fashion Discovery Engine",
+          description: "Growth & product team initiative: analyze user feedback, wishlist patterns, and purchase friction on Myntra.",
+        },
+      });
+    }
+
+    // Find the default demo project "Myntra Fashion Discovery Engine" AND any projects
+    // owned by the user or where they are an active member.
+    const userProjects = await db.project.findMany({
+      where: {
+        OR: [
+          { name: "Myntra Fashion Discovery Engine" },
+          { ownerId: user.id },
+          { members: { some: { userId: user.id } } },
+        ],
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return Response.json({
+      user,
+      projects: userProjects.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        role: "admin",
+      })),
+    });
+  } catch (err) {
+    return errorResponse(err);
+  }
+}
+
