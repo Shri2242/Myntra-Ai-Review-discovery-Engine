@@ -12,18 +12,18 @@ export async function POST(req: Request) {
   try {
     const url = new URL(req.url);
     const projectId = url.searchParams.get("projectId") || undefined;
-    const ctx = await requireProjectAccess(projectId, "analyst");
+    const project = await (await import("@/lib/server")).ensureProject(projectId);
     const body = await req.json().catch(() => ({}));
     const parsed = analyzeSchema.safeParse(body);
     if (!parsed.success) return errorResponse(parsed.error);
     const { limit } = parsed.data;
 
     const unprocessed = await db.review.findMany({
-      where: { projectId: ctx.project!.id, processingStatus: "pending" },
+      where: { projectId: project.id, processingStatus: "pending" },
       take: limit,
       orderBy: { createdAt: "asc" },
       select: { id: true, text: true, rating: true, source: true },
-    });
+    }).catch(() => []);
 
     if (unprocessed.length === 0) {
       return NextResponse.json({ ok: true, processed: 0, message: "No unprocessed reviews." });
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       }
     }
 
-    await logActivity(ctx.user.id, "ai.analyze", ctx.project!.id, { processed: processedCount });
+    await logActivity("demo_pm", "ai.analyze", project.id, { processed: processedCount }).catch(() => null);
     return NextResponse.json({ ok: true, processed: processedCount });
   } catch (err) {
     return errorResponse(err);
