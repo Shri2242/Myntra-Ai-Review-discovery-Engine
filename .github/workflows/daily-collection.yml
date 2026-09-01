@@ -94,7 +94,7 @@ jobs:
       # -------------------------------------------------------------------------
       - name: Run collectors (POST /api/collect)
         env:
-          API_BASE_URL: ${{ secrets.APP_URL }}
+          API_BASE_URL: ${{ secrets.APP_URL || 'https://myntra-ai-review-discovery-engine.vercel.app' }}
           API_AUTH_TOKEN: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
@@ -124,7 +124,7 @@ jobs:
       # -------------------------------------------------------------------------
       - name: Analyze new reviews (POST /api/analyze, looped)
         env:
-          API_BASE_URL: ${{ secrets.APP_URL }}
+          API_BASE_URL: ${{ secrets.APP_URL || 'https://myntra-ai-review-discovery-engine.vercel.app' }}
           API_AUTH_TOKEN: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
@@ -166,7 +166,7 @@ jobs:
       # -------------------------------------------------------------------------
       - name: Generate embeddings (POST /api/embed)
         env:
-          API_BASE_URL: ${{ secrets.APP_URL }}
+          API_BASE_URL: ${{ secrets.APP_URL || 'https://myntra-ai-review-discovery-engine.vercel.app' }}
           API_AUTH_TOKEN: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail

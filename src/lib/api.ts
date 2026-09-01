@@ -191,10 +191,11 @@ export const SOURCE_LABELS: Record<string, string> = {
   google_play: "Google Play",
   app_store: "App Store",
   reddit: "Reddit",
-  twitter: "Twitter / X",
-  csv_upload: "CSV Upload",
-  youtube: "YouTube Comments",
-  web_reviews: "Web / Product Reviews",
+  twitter: "Twitter / X Rants",
+  instagram: "Instagram Fashion",
+  youtube: "YouTube Try-Ons",
+  web_reviews: "Trustpilot & Web",
+  trustpilot: "Trustpilot Reviews",
 };
 
 export const THEME_LABELS: Record<string, string> = {
