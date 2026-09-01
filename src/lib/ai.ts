@@ -120,7 +120,22 @@ interface LLMMessage { role: string; content: string }
  * Throws on failure (callers catch and fall back to heuristics).
  */
 export async function callLLM(messages: LLMMessage[]): Promise<{ content: string; provider: string }> {
-  // Priority #1: Hugging Face (FREE) — when HUGGINGFACE_API_KEY is set
+  // Priority #1: DeepSeek (Primary LLM Engine)
+  if (isDeepSeekConfigured()) {
+    try {
+      const result = await deepseekChat(
+        messages.map((m) => ({ role: m.role as "system" | "user" | "assistant", content: m.content })),
+        { temperature: 0.3 },
+      );
+      if (result.content && result.content.trim().length > 0) {
+        return { content: result.content, provider: `deepseek (${result.model})` };
+      }
+    } catch (err) {
+      console.warn("[ai] DeepSeek call failed, falling back to other providers:", err);
+    }
+  }
+
+  // Priority #2: Hugging Face (FREE)
   if (isHuggingFaceConfigured()) {
     try {
       const result = await huggingfaceChat(
@@ -133,26 +148,13 @@ export async function callLLM(messages: LLMMessage[]): Promise<{ content: string
     }
   }
 
-  // Priority #2: Gemini (highly reliable backup)
+  // Priority #3: Gemini
   if (isGeminiConfigured()) {
     try {
       const result = await geminiChat(messages);
       return { content: result.content, provider: `gemini (${result.model})` };
     } catch (err) {
       console.warn("[ai] Gemini call failed, falling back:", err);
-    }
-  }
-
-  // Priority #3: DeepSeek
-  if (isDeepSeekConfigured()) {
-    try {
-      const result = await deepseekChat(
-        messages.map((m) => ({ role: m.role as "system" | "user" | "assistant", content: m.content })),
-        { temperature: 0.2 },
-      );
-      return { content: result.content, provider: `deepseek (${result.model})` };
-    } catch (err) {
-      console.warn("[ai] DeepSeek call failed, falling back to z-ai SDK:", err);
     }
   }
 
