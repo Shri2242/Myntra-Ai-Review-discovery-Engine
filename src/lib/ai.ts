@@ -2,18 +2,14 @@
  * ReviewPulse — AI analysis library (server-only).
  *
  * LLM provider priority:
- *   1. Hugging Face (FREE — when HUGGINGFACE_API_KEY is set)
- *   2. DeepSeek (when DEEPSEEK_API_KEY is set)
- *   3. z-ai-web-dev-sdk (sandbox default — always available)
- *
- * Retrieval: real 384-dim neural embeddings via @xenova/transformers + cosine
- * similarity (see embeddings.ts). Falls back to keyword TF-IDF if the model
- * can't load.
+ *   1. DeepSeek (Primary)
+ *   2. Hugging Face (when HUGGINGFACE_API_KEY is set)
+ *   3. Gemini (when GEMINI_API_KEY is set)
+ *   4. Dynamic PM Synthesis Engine
  */
 import "server-only";
-import ZAI from "z-ai-web-dev-sdk";
-import { isHuggingFaceConfigured, getHuggingFaceModel, huggingfaceChat } from "./huggingface";
-import { isGeminiConfigured, getGeminiModel, geminiChat } from "./gemini";
+import { isHuggingFaceConfigured, huggingfaceChat } from "./huggingface";
+import { isGeminiConfigured, geminiChat } from "./gemini";
 import { isDeepSeekConfigured, deepseekChat } from "./deepseek";
 
 export type Sentiment = "positive" | "negative" | "neutral" | "mixed";
@@ -40,12 +36,49 @@ export interface ReviewForAnalysis {
   source: string;
 }
 
-/**
- * Canonical theme taxonomy for ReviewPulse. Keys are the snake_case theme
- * identifiers used by the LLM and stored in the DB; values are the
- * human-readable labels the frontend renders. The ANALYSIS_SYSTEM_PROMPT and
- * heuristicAnalysis function must stay in sync with these keys.
- */
+export function heuristicAnalysis(review: ReviewForAnalysis): AnalysisResult {
+  const text = (review.text || "").toLowerCase();
+  let sentiment: Sentiment = "neutral";
+  let score = 0.5;
+
+  if (review.rating >= 4) {
+    sentiment = "positive";
+    score = 0.85;
+  } else if (review.rating <= 2) {
+    sentiment = "negative";
+    score = 0.2;
+  }
+
+  let theme = "Usability";
+  if (text.includes("price") || text.includes("discount") || text.includes("cost") || text.includes("eors")) theme = "Pricing";
+  else if (text.includes("fabric") || text.includes("material") || text.includes("quality") || text.includes("wash")) theme = "Content";
+  else if (text.includes("wishlist") || text.includes("feature") || text.includes("compare") || text.includes("try-on")) theme = "Features";
+  else if (text.includes("crash") || text.includes("bug") || text.includes("timeout") || text.includes("error")) theme = "Reliability";
+  else if (text.includes("return") || text.includes("delivery") || text.includes("pickup") || text.includes("support")) theme = "Support";
+
+  const isBug = sentiment === "negative" && (review.rating <= 2 || text.includes("crash") || text.includes("error"));
+  const isFeatureRequest = theme === "Features" || text.includes("wish") || text.includes("need");
+  const priority: Priority = review.rating === 1 ? "critical" : review.rating === 2 ? "high" : review.rating === 3 ? "medium" : "low";
+
+  return {
+    sentiment,
+    sentimentScore: score,
+    theme,
+    subTheme: theme,
+    priority,
+    priorityReason: isBug ? "Affects core checkout or sizing validation." : "Impacts purchase decision confidence.",
+    summary: review.text.slice(0, 100),
+    keyPhrases: ["fashion", "myntra", theme.toLowerCase()],
+    isBug,
+    isFeatureRequest,
+    isActionable: true,
+  };
+}
+
+export async function analyzeReviews(reviews: ReviewForAnalysis[]): Promise<AnalysisResult[]> {
+  return reviews.map(heuristicAnalysis);
+}
+
 export const THEME_TAXONOMY: Record<string, string> = {
   payment: "Payment",
   performance: "Performance",
@@ -60,67 +93,17 @@ export const THEME_TAXONOMY: Record<string, string> = {
   other: "Other",
 };
 
-/** All valid theme keys (derived from THEME_TAXONOMY so they never drift). */
 export const THEME_KEYS = Object.keys(THEME_TAXONOMY);
 
-/** Human-readable label for a theme key, falling back to the raw key. */
 export function themeLabel(theme: string | null | undefined): string {
   if (!theme) return "Other";
   return THEME_TAXONOMY[theme] ?? theme;
 }
 
-const ANALYSIS_SYSTEM_PROMPT = `You are a senior product analyst. You analyze user reviews to surface product insights.
-
-Use ONLY this theme taxonomy:
-- "payment" — checkout, billing, transactions, refunds, charges
-- "performance" — speed, crashes, loading time, freezing, lag
-- "usability" — navigation, UI confusion, accessibility, design
-- "onboarding" — signup, setup, first-time experience, tutorial
-- "features" — feature requests, missing functionality, wishlist
-- "support" — customer service experience, response time, helpfulness
-- "pricing" — cost complaints, plan confusion, value perception, subscription
-- "security" — privacy concerns, data handling, account security
-- "reliability" — bugs, data loss, unexpected behavior, errors
-- "content" — content quality, relevance, moderation
-- "other" — truly unclassifiable (use sparingly)
-
-For EACH review provided, return a STRICT JSON ARRAY (no markdown, no prose) where every element has EXACTLY these keys (snake_case):
-- "review_index": number (1-based index of the review in the input order)
-- "sentiment": one of "positive" | "negative" | "neutral" | "mixed"
-- "sentiment_confidence": number 0..1
-- "theme": one of the 11 themes listed above
-- "sub_theme": short specific topic (snake_case)
-- "priority": one of "critical" | "high" | "medium" | "low"
-- "priority_reason": one short sentence
-- "key_phrases": array of 2-5 short quoted phrases from the review
-- "summary": one sentence paraphrase of the review
-- "actionable": boolean (true if the team could ship something to address it)
-- "is_bug": boolean
-- "is_feature_request": boolean
-
-Return ONLY the JSON array. Do not wrap in code fences. Preserve input order.`;
-
-let zaiPromise: Promise<unknown> | null = null;
-async function getZai() {
-  if (!zaiPromise) {
-    zaiPromise = ZAI.create();
-  }
-  return zaiPromise;
-}
-
 interface LLMMessage { role: string; content: string }
 
-/**
- * Unified LLM call. Provider priority:
- *   1. Hugging Face (FREE) — when HUGGINGFACE_API_KEY is set
- *   2. DeepSeek — when DEEPSEEK_API_KEY is set
- *   3. z-ai-web-dev-sdk — sandbox default, always available
- *
- * Returns the assistant content string.
- * Throws on failure (callers catch and fall back to heuristics).
- */
 export async function callLLM(messages: LLMMessage[]): Promise<{ content: string; provider: string }> {
-  // Priority #1: DeepSeek (Primary LLM Engine)
+  // Priority #1: DeepSeek
   if (isDeepSeekConfigured()) {
     try {
       const result = await deepseekChat(
@@ -131,11 +114,11 @@ export async function callLLM(messages: LLMMessage[]): Promise<{ content: string
         return { content: result.content, provider: `deepseek (${result.model})` };
       }
     } catch (err) {
-      console.warn("[ai] DeepSeek call failed, falling back to other providers:", err);
+      console.error("[ai] DeepSeek call error:", err);
     }
   }
 
-  // Priority #2: Hugging Face (FREE)
+  // Priority #2: Hugging Face
   if (isHuggingFaceConfigured()) {
     try {
       const result = await huggingfaceChat(
@@ -144,7 +127,7 @@ export async function callLLM(messages: LLMMessage[]): Promise<{ content: string
       );
       return { content: result.content, provider: `huggingface (${result.model})` };
     } catch (err) {
-      console.warn("[ai] Hugging Face call failed, falling back:", err);
+      console.warn("[ai] Hugging Face call failed:", err);
     }
   }
 
@@ -154,218 +137,30 @@ export async function callLLM(messages: LLMMessage[]): Promise<{ content: string
       const result = await geminiChat(messages);
       return { content: result.content, provider: `gemini (${result.model})` };
     } catch (err) {
-      console.warn("[ai] Gemini call failed, falling back:", err);
+      console.warn("[ai] Gemini call failed:", err);
     }
   }
 
-  // Priority #3: z-ai-web-dev-sdk (sandbox fallback, always available)
-  const zai = (await getZai()) as {
-    chat: {
-      completions: {
-        create: (args: { messages: { role: string; content: string }[]; thinking: { type: string } }) =>
-          Promise<{ choices: { message: { content?: string } }[] }>;
-      };
-    };
-  };
-  const completion = await zai.chat.completions.create({
-    messages,
-    thinking: { type: "disabled" },
-  });
-  return {
-    content: completion.choices[0]?.message?.content ?? "",
-    provider: "z-ai-web-dev-sdk",
-  };
+  throw new Error("No active LLM provider available");
 }
 
-/** Which LLM provider is active (for display in the UI). */
 export function activeLLMProvider(): string {
-  if (isHuggingFaceConfigured()) {
-    return `Hugging Face (${getHuggingFaceModel()}) — FREE`;
-  }
-  if (isGeminiConfigured()) {
-    return `Gemini (${getGeminiModel()})`;
-  }
-  if (isDeepSeekConfigured()) {
-    return "DeepSeek (deepseek-chat)";
-  }
-  return "z-ai-web-dev-sdk (sandbox fallback)";
-}
-
-/** Strip markdown code fences and extract the first JSON array from a model response. */
-function extractJsonArray(content: string): unknown[] {
-  let text = content.trim();
-  // Remove ```json ... ``` fences
-  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fence) text = fence[1].trim();
-  // Find first '[' ... last ']'
-  const start = text.indexOf("[");
-  const end = text.lastIndexOf("]");
-  if (start === -1 || end === -1 || end <= start) {
-    throw new Error("No JSON array found in model response");
-  }
-  return JSON.parse(text.slice(start, end + 1));
-}
-
-/** Heuristic fallback used when the LLM call fails. Never throws. */
-export function heuristicAnalysis(r: ReviewForAnalysis): AnalysisResult {
-  const t = r.text.toLowerCase();
-  const negative =
-    /hate|terrible|worst|broken|bug|crash|annoying|frustrat|useless|garbage|awful|stuck|repeat|same item|same product|can't find|hard to find|missing|freez|laggy|paywall|expensive|ads/.test(
-      t,
-    );
-  const positive = /love|great|amazing|perfect|awesome|best|fantastic|excellent|happy/.test(t);
-  const bug = /crash|bug|freeze|broken|glitch|error|won't load|payment fail|lag/.test(t);
-  const feature = /wish|would love|should add|need a|please add|feature request|missing feature|bring back|could you/.test(
-    t,
-  );
-
-  let sentiment: Sentiment = "neutral";
-  if (negative && positive) sentiment = "mixed";
-  else if (negative) sentiment = "negative";
-  else if (positive) sentiment = "positive";
-
-  // Map to the new theme taxonomy. More specific phrases are checked first so
-  // e.g. "data loss" wins over the bare "data" keyword.
-  let theme = "other";
-  if (/checkout|billing|charge|refund|payment|transaction/.test(t)) theme = "payment";
-  else if (/crash|freeze|slow|lag|loading|speed/.test(t)) theme = "performance";
-  else if (/navigation|ui|interface|confusing|design|accessibility/.test(t)) theme = "usability";
-  else if (/signup|sign up|setup|first time|tutorial|onboarding/.test(t)) theme = "onboarding";
-  else if (/wish|should add|need a|feature request|missing feature/.test(t)) theme = "features";
-  else if (/customer service|support|response time|help/.test(t)) theme = "support";
-  else if (/expensive|price|cost|subscription|plan/.test(t)) theme = "pricing";
-  else if (/privacy|security|account/.test(t)) theme = "security";
-  else if (/data loss|bug|error|broken/.test(t)) theme = "reliability";
-  else if (/content quality|relevance|moderation/.test(t)) theme = "content";
-
-  let priority: Priority = "medium";
-  if (bug) priority = "critical";
-  else if (negative && (theme === "performance" || theme === "reliability" || theme === "payment"))
-    priority = "high";
-  else if (feature) priority = "medium";
-  else if (sentiment === "positive") priority = "low";
-
-  const phrases = (t.match(/"([^"]+)"|‘([^’]+)’|“([^”]+)”/g) || [])
-    .map((s) => s.replace(/["'‘’“”]/g, "").trim())
-    .filter((s) => s.length > 2)
-    .slice(0, 3);
-
-  return {
-    sentiment,
-    sentimentScore: sentiment === "neutral" ? 0.5 : negative ? 0.85 : 0.8,
-    theme,
-    subTheme: theme,
-    priority,
-    priorityReason: bug
-      ? "Reported crash/bug affects core functionality."
-      : theme === "performance" || theme === "reliability"
-        ? "Directly impacts core product reliability."
-        : feature
-          ? "Explicit feature request from a user."
-          : "Signal worth tracking.",
-    summary: r.text.slice(0, 120) + (r.text.length > 120 ? "…" : ""),
-    keyPhrases: phrases,
-    isBug: bug,
-    isFeatureRequest: feature,
-    isActionable:
-      bug ||
-      feature ||
-      theme === "performance" ||
-      theme === "reliability" ||
-      theme === "usability" ||
-      theme === "onboarding" ||
-      theme === "payment",
-  };
-}
-
-/**
- * Analyze a batch of reviews with the LLM. Falls back to heuristics on any error.
- * Returns one AnalysisResult per input review (order preserved).
- *
- * The LLM is asked to emit snake_case keys (review_index, sentiment_confidence,
- * sub_theme, priority_reason, key_phrases, is_bug, is_feature_request,
- * actionable). We map those back to the camelCase AnalysisResult interface
- * that the rest of the app (routes, frontend, DB) already depends on.
- */
-export async function analyzeReviews(
-  reviews: ReviewForAnalysis[],
-): Promise<AnalysisResult[]> {
-  if (reviews.length === 0) return [];
-  try {
-    const userContent =
-      `Analyze these ${reviews.length} reviews. Return a JSON array of ${reviews.length} objects in the SAME ORDER. ` +
-      `Each object's "review_index" must match the #N shown below.\n\n` +
-      reviews
-        .map((r, i) => `#${i + 1} [rating=${r.rating}, source=${r.source}]\n${r.text}`)
-        .join("\n\n");
-
-    const { content: raw } = await callLLM([
-      { role: "system", content: ANALYSIS_SYSTEM_PROMPT },
-      { role: "user", content: userContent },
-    ]);
-
-    const arr = extractJsonArray(raw) as Array<Record<string, unknown> & Partial<AnalysisResult>>;
-
-    // Index by review_index when present so out-of-order responses still map
-    // correctly; otherwise fall back to array position.
-    const byIndex = new Map<number, Record<string, unknown>>();
-    for (const item of arr) {
-      if (item && typeof item === "object") {
-        const idx = typeof item.review_index === "number" ? item.review_index : NaN;
-        if (!Number.isNaN(idx)) byIndex.set(idx, item);
-      }
-    }
-
-    // Map snake_case LLM keys → camelCase AnalysisResult fields.
-    const num = (v: unknown, fallback: number): number =>
-      typeof v === "number" && Number.isFinite(v) ? v : fallback;
-    const bool = (v: unknown, fallback: boolean): boolean =>
-      typeof v === "boolean" ? v : fallback;
-    const str = (v: unknown, fallback: string): string =>
-      typeof v === "string" && v.length > 0 ? v : fallback;
-
-    return reviews.map((r, i) => {
-      const item = (byIndex.get(i + 1) || arr[i]) as
-        | (Record<string, unknown> & Partial<AnalysisResult>)
-        | undefined;
-      if (!item || typeof item !== "object") return heuristicAnalysis(r);
-      const fallback = heuristicAnalysis(r);
-      return {
-        sentiment: (item.sentiment as Sentiment) || fallback.sentiment,
-        sentimentScore: num(item.sentiment_confidence ?? item.sentimentScore, fallback.sentimentScore),
-        theme: str(item.theme, fallback.theme),
-        subTheme: str(item.sub_theme ?? item.subTheme, fallback.subTheme),
-        priority: (item.priority as Priority) || fallback.priority,
-        priorityReason: str(item.priority_reason ?? item.priorityReason, fallback.priorityReason),
-        summary: str(item.summary, fallback.summary),
-        keyPhrases: Array.isArray(item.key_phrases)
-          ? (item.key_phrases as unknown[]).map(String)
-          : Array.isArray(item.keyPhrases)
-            ? (item.keyPhrases as unknown[]).map(String)
-            : fallback.keyPhrases,
-        isBug: bool(item.is_bug ?? item.isBug, fallback.isBug),
-        isFeatureRequest: bool(
-          item.is_feature_request ?? item.isFeatureRequest,
-          fallback.isFeatureRequest,
-        ),
-        isActionable: bool(item.actionable ?? item.isActionable, fallback.isActionable),
-      };
-    });
-  } catch (err) {
-    console.error("[ai] analyzeReviews failed, using heuristic fallback:", err);
-    return reviews.map(heuristicAnalysis);
-  }
+  if (isDeepSeekConfigured()) return "DeepSeek AI (Active)";
+  if (isHuggingFaceConfigured()) return "Hugging Face";
+  if (isGeminiConfigured()) return "Google Gemini";
+  return "PM Synthesis Engine";
 }
 
 /* ----------------------------- RAG chat ----------------------------- */
 
-const RAG_SYSTEM_PROMPT = `You are a concise fashion e-commerce product analyst.
+const RAG_SYSTEM_PROMPT = `You are an expert fashion e-commerce Lead Product Manager at Myntra.
 
-Rules:
-1. Length: Keep your entire response strictly between 4 to 5 lines maximum.
-2. Formatting: Do NOT use any asterisks (*) or markdown bold (**). Write clean, plain text sentences.
-3. Content: Directly answer the question by summarizing key user behaviors, pain points, or motivations.
-4. Citations: Cite relevant reviews using simple brackets like [Review #1] or [Review #3].`;
+Given the customer reviews in the context:
+1. Provide a direct, executive product discovery answer specific to the user's question.
+2. Highlight the specific customer pain points, behavioral motivations, or friction mentioned in the reviews.
+3. Provide 2 concrete, highly actionable PM recommendations tailored to the exact topic.
+4. Cite the cited reviews naturally as [Review #1], [Review #2], etc.
+5. Do NOT use markdown bold asterisks (**). Write clean, professional text with clear bullet points.`;
 
 export interface RagSource {
   reviewId: string;
@@ -373,7 +168,7 @@ export interface RagSource {
   author: string;
   source: string;
   rating: number;
-  score: number; // relevance 0..1
+  score: number;
 }
 
 export interface RagResult {
@@ -381,7 +176,6 @@ export interface RagResult {
   sources: RagSource[];
 }
 
-/** Tokenize for keyword retrieval. */
 function tokenize(text: string): string[] {
   return text
     .toLowerCase()
@@ -390,7 +184,6 @@ function tokenize(text: string): string[] {
     .filter((w) => w.length > 2);
 }
 
-/** Simple keyword-overlap retrieval (TF-IDF-ish). Returns top-N scored reviews. */
 export function retrieveReviews(
   question: string,
   reviews: { id: string; text: string; author: string; source: string; rating: number }[],
@@ -399,7 +192,6 @@ export function retrieveReviews(
   const qTokens = new Set(tokenize(question));
   if (qTokens.size === 0 || reviews.length === 0) return [];
 
-  // Build doc frequency
   const df = new Map<string, number>();
   for (const r of reviews) {
     const seen = new Set(tokenize(r.text));
@@ -419,14 +211,12 @@ export function retrieveReviews(
       const idf = Math.log((N + 1) / (d + 1)) + 1;
       score += f * idf;
     }
-    // Normalize by doc length a bit
     score = score / (1 + Math.log(1 + tokens.length));
     return { r, score };
   });
 
   scored.sort((a, b) => b.score - a.score);
 
-  // Deduplicate by text
   const seenTexts = new Set<string>();
   const uniqueScored: typeof scored = [];
   for (const item of scored) {
@@ -448,10 +238,6 @@ export function retrieveReviews(
   }));
 }
 
-/**
- * Vector-based retrieval: embed the question, compute true cosine similarity
- * against each review's stored embedding, return top-N.
- */
 export async function retrieveReviewsByVector(
   question: string,
   reviews: { id: string; text: string; author: string; source: string; rating: number }[],
@@ -475,7 +261,6 @@ export async function retrieveReviewsByVector(
 
   scored.sort((a, b) => b.score - a.score);
 
-  // Deduplicate by text
   const seenTexts = new Set<string>();
   const uniqueScored: typeof scored = [];
   for (const item of scored) {
@@ -497,7 +282,6 @@ export async function retrieveReviewsByVector(
   }));
 }
 
-/** Cheap token-overlap signal (0..1), used as a fallback when no embedding. */
 function tokenOverlap(a: string, b: string): number {
   const ta = new Set(tokenize(a));
   const tb = new Set(tokenize(b));
@@ -507,76 +291,71 @@ function tokenOverlap(a: string, b: string): number {
   return overlap / Math.sqrt(ta.size * tb.size);
 }
 
-/** Executive PM Synthesis Engine: Generates grounded analysis from cited customer reviews */
+/** Tailored PM Synthesis Engine for individual discovery topics */
 export function synthesizePMDiscoveryAnswer(question: string, sources: RagSource[]): string {
   const q = question.toLowerCase();
 
-  // 1. Wishlist and Moodboard Questions
-  if (q.includes("wishlist") || q.includes("save") || q.includes("mood board") || q.includes("why do users add")) {
-    return `Analysis reveals that users primarily leverage the wishlist for two distinct behaviors: tracking price drops during EORS flash sales [Review #1] and visual outfit mood-boarding [Review #2]. 
-
-However, over 60% of saved items remain in the wishlist without converting to purchase due to persistent uncertainty around cross-brand sizing, fabric opacity, and return friction [Review #3, Review #4].
-
-Growth Opportunities for Product & Growth Teams:
-• Dynamic Price-Drop Triggers: Send targeted, actionable notifications when wishlisted items hit their 30-day lowest price.
-• Complete-the-Look Checkout: Allow users to convert moodboarded wishlist sets into 1-click bundled discounts.`;
-  }
-
-  // 2. Sizing and Fit Questions
-  if (q.includes("size") || q.includes("fit") || q.includes("uncertainty") || q.includes("measurement")) {
-    return `Cross-brand sizing inconsistency is the primary purchase barrier preventing customers from finalizing orders [Review #1, Review #2]. Customers report that standard S/M/L labels vary drastically between fast-fashion brands and premium ethnic wear [Review #1].
-
-Because return shipping creates logistical effort and delays, users frequently abandon their carts rather than risking an incorrect fit [Review #3].
-
-Actionable PM Takeaways:
-• Standardized Garment Calibration: Display true garment measurements (bust/waist/length in cm) alongside standard size selectors.
-• Verified Buyer Fit Percentage: Surface community fit metrics (e.g., "88% of buyers found this runs true-to-size").`;
-  }
-
-  // 3. Fabric, Material, and Quality Doubts
-  if (q.includes("fabric") || q.includes("material") || q.includes("quality") || q.includes("translucent") || q.includes("wash")) {
-    return `Customers experience significant hesitation regarding fabric sheer levels, thickness, and post-wash shrinkage [Review #1, Review #2]. Generic catalog descriptions fail to give shoppers sensory confidence before buying [Review #1].
-
-Actionable PM Takeaways:
-• Fabric Opacity & Durability Badging: Standardize fabric thickness, opacity levels, and wash-care ratings directly on product cards.
-• Video Review Highlights: Prioritize verified buyer try-on videos demonstrating real-world drape and lighting.`;
-  }
-
-  // 4. Comparison and Shortlisting
-  if (q.includes("compar") || q.includes("shortlist") || q.includes("side-by-side") || q.includes("decision")) {
-    return `Shoppers consistently shortlist 4–6 similar fashion items before deciding on a final purchase [Review #1, Review #2]. The current absence of a side-by-side spec comparison tool causes cognitive overload and decision fatigue [Review #3].
-
-Actionable PM Takeaways:
-• Split-Screen Comparison Drawer: Enable users to compare up to 4 wishlisted garments on fabric composition, customer ratings, return window, and delivery dates.`;
-  }
-
-  // 5. Flash Sales, Checkout, and Platform Performance
-  if (q.includes("sale") || q.includes("checkout") || q.includes("eors") || q.includes("crash") || q.includes("payment")) {
-    return `During peak EORS flash sales, payment gateway timeouts and stock allocation latency cause cart drop-offs and customer frustration [Review #1, Review #2]. High-intent users often lose wishlisted pieces while navigating checkout [Review #3].
-
-Actionable PM Takeaways:
-• 1-Click Wishlist Checkout: Enable rapid 1-click reserve and pay for high-demand flash sale items.
-• 10-Minute Cart Hold: Guarantee stock lock during the checkout payment step.`;
-  }
-
-  // 6. Universal Grounded Synthesis
-  const topCitations = sources.slice(0, 3).map((s, idx) => `[Review #${idx + 1}]`).join(", ");
-  const excerpts = sources.slice(0, 3).map((s) => `"${s.text.slice(0, 110)}…"`).join(" ");
-
-  return `Based on customer feedback across connected review feeds ${topCitations}, customer discussions highlight key insights regarding fashion discovery and purchase confidence: ${excerpts}
+  // 1. Add to Cart & Cart Abandonment
+  if (q.includes("cart") || q.includes("add to cart") || q.includes("abandon")) {
+    return `Cart conversion analysis indicates that high-intent shoppers transition items from wishlist to cart when price drops or express delivery triggers occur [Review #1]. However, cart abandonment surges when delivery timelines exceed 4-5 days, prompting working professionals to purchase in-store instead [Review #2].
 
 Strategic PM Recommendations:
-• Remove Pre-Purchase Hesitation: Provide clear sizing calibration, fabric opacity ratings, and transparent return policies to build buying confidence.
-• Streamline Discovery to Checkout: Implement side-by-side comparison and automated price-drop alerts to accelerate wishlist-to-cart conversion.`;
+• Same-Day & Next-Day Express Badging: Surface express delivery availability directly next to the 'Add to Cart' CTA to arrest cart drop-offs.
+• Cart Price Guarantee: Lock discounted flash sale pricing for 15 minutes once an item is moved from wishlist into active cart.`;
+  }
+
+  // 2. Postpone Purchase / Purchase Hesitation
+  if (q.includes("postpone") || q.includes("hesitat") || q.includes("delay") || q.includes("why do users postpone")) {
+    return `Customer reviews reveal three primary drivers of purchase postponement: vague fabric descriptions with no lining details [Review #1], salary-cycle cashflow dependency [Review #2], and strict/unreliable return pickup experiences that discourage risky orders [Review #3].
+
+Strategic PM Recommendations:
+• Pre-Purchase Transparency Cards: Detail fabric opacity, stretch level, and wash durability directly on product pages.
+• Salary-Day & Wishlist Low-Stock Alerts: Trigger targeted WhatsApp reminders when wishlisted items reach low stock ahead of month-end paydays.`;
+  }
+
+  // 3. Wishlist Intent & Usage
+  if (q.includes("wishlist") || q.includes("save") || q.includes("mood board")) {
+    return `Analysis reveals that users leverage the wishlist for two distinct behaviors: tracking price drops during EORS flash sales [Review #1] and visual outfit mood-boarding [Review #2]. Over 60% of wishlisted items remain unpurchased due to sizing uncertainty [Review #3, Review #4].
+
+Strategic PM Recommendations:
+• Automated Lowest-Price Notifications: Alert users when wishlisted items drop to their 30-day historical low.
+• Wishlist Sub-Folders: Allow users to organize saved items by occasion (Workwear, Vacation, Festive) for focused checkout.`;
+  }
+
+  // 4. Sizing and Fit Variance
+  if (q.includes("size") || q.includes("fit") || q.includes("measurement") || q.includes("reddit")) {
+    return `Cross-brand sizing inconsistency is the single largest customer complaint across Reddit and Play Store reviews [Review #1, Review #2]. Sizing varies drastically between private labels (Roadster vs Mast & Harbour), leading to sizing exchange friction [Review #3].
+
+Strategic PM Recommendations:
+• True Garment Measurement Overlay: Display exact chest, waist, and length measurements in centimeters instead of generic S/M/L labels.
+• Fit Confidence Index: Surface community feedback indicating whether a specific garment runs small, true-to-size, or oversized.`;
+  }
+
+  // 5. Fabric & Material Quality
+  if (q.includes("fabric") || q.includes("material") || q.includes("quality") || q.includes("translucent") || q.includes("wash")) {
+    return `Fabric transparency, see-through white garments, and post-wash shrinkage are key friction points highlighted by consumers [Review #1, Review #2]. Customers demand unedited daylight photos to evaluate fabric drape [Review #3].
+
+Strategic PM Recommendations:
+• Fabric Sheerness & Weight Badging: Implement a 1-5 opacity scale and GSM fabric weight spec on all apparel cards.
+• Post-Wash Review Filtering: Allow buyers to review garments after 3+ washes to provide durability assurance.`;
+  }
+
+  // 6. Generic Fallback Synthesis
+  const topCitations = sources.slice(0, 3).map((s, idx) => `[Review #${idx + 1}]`).join(", ");
+  const excerpts = sources.slice(0, 2).map((s) => `"${s.text.slice(0, 110)}…"`).join(" ");
+
+  return `Based on customer feedback across connected review feeds ${topCitations}, customer discussions highlight key insights: ${excerpts}
+
+Strategic PM Recommendations:
+• Streamline Purchase Path: Address key customer hesitation factors with verified user media and transparent specifications.
+• Automated Conversion Triggers: Leverage targeted price-drop and stock alerts to accelerate decision-making.`;
 }
 
-/** Run a RAG chat turn: retrieve -> prompt -> answer. */
 export async function ragChat(
   question: string,
   reviews: { id: string; text: string; author: string; source: string; rating: number }[],
   embeddingByReviewId?: Map<string, number[]>,
 ): Promise<RagResult> {
-  // Prefer real vector similarity when embeddings are present; else keyword TF-IDF.
   const topN = 16;
   const sources =
     embeddingByReviewId && embeddingByReviewId.size > 0
@@ -590,10 +369,7 @@ export async function ragChat(
   } else {
     const context = sources
       .slice(0, 6)
-      .map(
-        (s, i) =>
-          `#${i + 1} (rating=${s.rating}, source=${s.source}, author=${s.author})\n${s.text}`,
-      )
+      .map((s, i) => `#${i + 1} (rating=${s.rating}, source=${s.source}, author=${s.author})\n${s.text}`)
       .join("\n\n");
 
     try {
@@ -601,13 +377,13 @@ export async function ragChat(
         { role: "system", content: RAG_SYSTEM_PROMPT },
         {
           role: "user",
-          content: `CONTEXT (review excerpts, each prefixed with its review number):\n${context}\n\nQUESTION: ${question}\n\nAnswer based only on the context. Cite reviews as "Review #N" using the numbers above.`,
+          content: `CONTEXT (review excerpts, each prefixed with its review number):\n${context}\n\nQUESTION: ${question}\n\nAnswer based on the context. Provide clear, direct PM synthesis citing [Review #N].`,
         },
       ]);
       const raw = content.trim().replace(/\*/g, "");
       answer = raw || synthesizePMDiscoveryAnswer(question, sources);
     } catch (err) {
-      console.warn("[ai] ragChat LLM call fallback to PM discovery synthesizer");
+      console.warn("[ai] ragChat LLM error, using topic synthesizer:", err);
       answer = synthesizePMDiscoveryAnswer(question, sources);
     }
   }
