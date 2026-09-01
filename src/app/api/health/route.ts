@@ -4,8 +4,8 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   return NextResponse.json({
-    status: "ok",
-    service: "reviewpulse-api",
-    time: new Date().toISOString(),
+    status: "healthy",
+    app: "Myntra Fashion Discovery Engine",
+    timestamp: new Date().toISOString(),
   });
 }
