@@ -1,7 +1,7 @@
 "use client";
 
 import { useApp, type ViewKey } from "@/store/app";
-import { Github, ExternalLink } from "lucide-react";
+import { Github } from "lucide-react";
 
 const VIEW_TITLES: Record<ViewKey, { title: string; crumb: string }> = {
   landing: { title: "Home", crumb: "Home" },
@@ -16,8 +16,8 @@ const VIEW_TITLES: Record<ViewKey, { title: string; crumb: string }> = {
   team: { title: "Team", crumb: "Dashboard / Team" },
 };
 
-export function Header({ onOpenLanding }: { onOpenLanding: () => void }) {
-  const { view, setView } = useApp();
+export function Header({ onOpenLanding }: { onOpenLanding?: () => void }) {
+  const { view } = useApp();
   const meta = VIEW_TITLES[view] ?? VIEW_TITLES.overview;
 
   return (
@@ -35,24 +35,16 @@ export function Header({ onOpenLanding }: { onOpenLanding: () => void }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => setView("landing")}
-          className="hidden h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/60 hover:text-foreground sm:flex"
-          aria-label="Landing"
-          title="Go to homepage"
-        >
-          <ExternalLink className="h-4 w-4" />
-        </button>
-
         <a
           href="https://github.com/Shri2242/Myntra-Ai-Review-discovery-Engine"
           target="_blank"
           rel="noreferrer"
-          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-          aria-label="GitHub"
+          className="flex items-center gap-1.5 rounded-lg border border-border/70 bg-secondary/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 hover:bg-secondary hover:text-foreground shadow-sm"
+          aria-label="GitHub Repository"
           title="View GitHub Repository"
         >
-          <Github className="h-4 w-4" />
+          <Github className="h-4 w-4 text-foreground" />
+          <span className="hidden sm:inline">GitHub</span>
         </a>
       </div>
     </header>
