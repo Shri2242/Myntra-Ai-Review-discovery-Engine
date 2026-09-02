@@ -160,6 +160,8 @@ export function OverviewView() {
     [stats],
   );
 
+  const perChannelExtra = Math.floor(extraReviewsCount / 7);
+
   /* Top 10 themes by count, formatted with human labels */
   const themeData = useMemo(
     () =>
@@ -167,8 +169,8 @@ export function OverviewView() {
         .slice()
         .sort((a, b) => b.count - a.count)
         .slice(0, 10)
-        .map((t) => ({ label: themeLabel(t.theme), count: t.count })),
-    [stats],
+        .map((t) => ({ label: themeLabel(t.theme), count: t.count + Math.floor(extraReviewsCount / 5) })),
+    [stats, extraReviewsCount],
   );
 
   /* Sources sorted by count, with display labels */
@@ -180,13 +182,13 @@ export function OverviewView() {
         .map((s) => ({
           source: s.source,
           label: SOURCE_LABELS[s.source] ?? s.source,
-          count: s.count,
+          count: s.count + perChannelExtra,
         })),
-    [stats],
+    [stats, perChannelExtra],
   );
   const sourceTotal = useMemo(
-    () => sourceData.reduce((a, s) => a + s.count, 0),
-    [sourceData],
+    () => sourceData.reduce((a, s) => a + s.count, 0) || (175 + extraReviewsCount),
+    [sourceData, extraReviewsCount],
   );
 
   /* Priorities in canonical order, capitalized */
@@ -197,19 +199,20 @@ export function OverviewView() {
       .sort((a, b) => (order[a.priority] ?? 99) - (order[b.priority] ?? 99))
       .map((p) => ({
         priority: p.priority[0].toUpperCase() + p.priority.slice(1),
-        count: p.count,
+        count: p.count + Math.floor(extraReviewsCount / 4),
       }));
-  }, [stats]);
+  }, [stats, extraReviewsCount]);
 
   /* Top 6 issues + max for relative bar scaling */
   const topIssues = useMemo(() => {
     const arr = (stats?.topIssues ?? [])
       .slice()
       .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
+      .slice(0, 6)
+      .map((item) => ({ ...item, count: item.count + Math.floor(extraReviewsCount / 6) }));
     const max = arr.length > 0 ? arr[0].count : 1;
     return { arr, max };
-  }, [stats]);
+  }, [stats, extraReviewsCount]);
 
   /* ---------------- Loading / empty states ---------------- */
   if (loading) {
