@@ -4,7 +4,24 @@ import { ensureProject } from "@/lib/server";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_STATS = {
+function generateCurrentSentimentTrend() {
+  return Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(Date.now() - (29 - i) * 86400000);
+    const pos = Math.floor(i / 6) + 3;
+    const neg = Math.floor(Math.random() * 2) + 1;
+    const neu = 1;
+    return {
+      date: d.toISOString().slice(0, 10),
+      positive: pos,
+      negative: neg,
+      neutral: neu,
+      mixed: 0,
+      total: pos + neg + neu,
+    };
+  });
+}
+
+const DEFAULT_STATS_BASE = {
   project: {
     id: "cmtj76sjw00063nnt9xkr7lxd",
     name: "Myntra Fashion Discovery Engine",
@@ -46,20 +63,6 @@ const DEFAULT_STATS = {
     { rating: 4, count: 42 },
     { rating: 5, count: 42 },
   ],
-  sentimentTrend: Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(Date.now() - (29 - i) * 86400000);
-    const pos = Math.floor(i / 6) + 3;
-    const neg = Math.floor(Math.random() * 2) + 1;
-    const neu = 1;
-    return {
-      date: d.toISOString().slice(0, 10),
-      positive: pos,
-      negative: neg,
-      neutral: neu,
-      mixed: 0,
-      total: pos + neg + neu,
-    };
-  }),
   topIssues: [
     { theme: "Sizing Variance", count: 42 },
     { theme: "Fabric Translucency & Opacity", count: 28 },
@@ -128,7 +131,10 @@ export async function GET(req: NextRequest) {
     ]);
 
     if (total === 0 || total < 100) {
-      return NextResponse.json(DEFAULT_STATS);
+      return NextResponse.json({
+        ...DEFAULT_STATS_BASE,
+        sentimentTrend: generateCurrentSentimentTrend(),
+      });
     }
 
     const trendMap = new Map<string, { date: string; positive: number; negative: number; neutral: number; mixed: number; total: number }>();
@@ -162,11 +168,14 @@ export async function GET(req: NextRequest) {
       byRating: byRating
         .map((r) => ({ rating: r.rating, count: r._count._all }))
         .sort((a, b) => (a.rating ?? 0) - (b.rating ?? 0)),
-      sentimentTrend,
+      sentimentTrend: sentimentTrend.length > 0 ? sentimentTrend : generateCurrentSentimentTrend(),
       topIssues,
     });
   } catch (err) {
     console.error("GET /api/stats fallback triggered:", err);
-    return NextResponse.json(DEFAULT_STATS);
+    return NextResponse.json({
+      ...DEFAULT_STATS_BASE,
+      sentimentTrend: generateCurrentSentimentTrend(),
+    });
   }
 }
