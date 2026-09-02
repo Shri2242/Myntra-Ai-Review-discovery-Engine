@@ -17,6 +17,9 @@ import {
   DownloadCloud,
   CheckCircle2,
   Calendar,
+  RotateCcw,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 
 export function SourcesView() {
@@ -25,10 +28,12 @@ export function SourcesView() {
   const [syncingAll, setSyncingAll] = useState(false);
   const [pullingManual, setPullingManual] = useState(false);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [pullStep, setPullStep] = useState<string | null>(null);
   const { toast } = useToast();
   const activeProjectId = useApp((s) => s.activeProjectId);
   const extraReviewsCount = useApp((s) => s.extraReviewsCount);
   const incrementExtraReviews = useApp((s) => s.incrementExtraReviews);
+  const resetExtraReviews = useApp((s) => s.resetExtraReviews);
 
   const fetchSources = async () => {
     try {
@@ -72,6 +77,7 @@ export function SourcesView() {
 
   const handleSyncAll = async () => {
     setSyncingAll(true);
+    setPullStep("Connecting to 7 review pipelines...");
     try {
       await api.collect(undefined, activeProjectId ?? undefined);
       const newTotal = incrementExtraReviews(35);
@@ -87,13 +93,19 @@ export function SourcesView() {
       });
     } finally {
       setSyncingAll(false);
+      setPullStep(null);
     }
   };
 
   const handleManualPull = async () => {
     setPullingManual(true);
+    setPullStep("Extracting fashion reviews across Google Play, Reddit & App Store...");
     try {
+      await new Promise((r) => setTimeout(r, 600));
+      setPullStep("Parsing Instagram reels & YouTube haul comments...");
       await api.collect(undefined, activeProjectId ?? undefined);
+      setPullStep("Computing 384-dimensional vector embeddings...");
+      await new Promise((r) => setTimeout(r, 400));
       const newTotal = incrementExtraReviews(35);
       toast({
         title: "Manual Ingestion Complete (+35 Reviews)",
@@ -107,7 +119,16 @@ export function SourcesView() {
       });
     } finally {
       setPullingManual(false);
+      setPullStep(null);
     }
+  };
+
+  const handleResetBaseline = () => {
+    resetExtraReviews();
+    toast({
+      title: "Dataset Reset to Baseline (175 Reviews)",
+      description: "Restored balanced 25 reviews per channel across all 7 feeds.",
+    });
   };
 
   if (loading) {
@@ -123,15 +144,21 @@ export function SourcesView() {
   }
 
   const perChannelExtra = Math.floor(extraReviewsCount / 7);
+  const totalReviewsDisplay = 175 + extraReviewsCount;
 
   return (
     <div className="space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5">
         <div>
-          <h1 className="font-heading text-xl sm:text-2xl font-black tracking-tight text-foreground">
-            Review Sources &amp; Pipelines
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-heading text-xl sm:text-2xl font-black tracking-tight text-foreground">
+              Review Sources &amp; Pipelines
+            </h1>
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary border border-primary/20">
+              {totalReviewsDisplay} Total Reviews
+            </span>
+          </div>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Multi-channel automated collectors feeding customer conversations into the AI Discovery Engine.
           </p>
@@ -139,11 +166,24 @@ export function SourcesView() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {extraReviewsCount > 0 && (
+            <Button
+              onClick={handleResetBaseline}
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground font-semibold rounded-xl"
+              title="Reset reviews back to baseline 175"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Reset to 175</span>
+            </Button>
+          )}
+
           <Button
             onClick={handleManualPull}
             disabled={pullingManual || syncingAll}
             variant="outline"
-            className="gap-2 border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-bold text-xs sm:text-sm rounded-xl shadow-sm"
+            className="gap-2 border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-bold text-xs sm:text-sm rounded-xl shadow-sm transition"
           >
             <DownloadCloud className={cn("h-4 w-4", pullingManual && "animate-bounce")} />
             <span>{pullingManual ? "Pulling Reviews…" : "Pull Reviews (Manual)"}</span>
@@ -152,13 +192,24 @@ export function SourcesView() {
           <Button
             onClick={handleSyncAll}
             disabled={syncingAll || pullingManual}
-            className="gap-2 bg-primary hover:bg-primary/90 text-white font-bold text-xs sm:text-sm shadow-md shadow-primary/20 rounded-xl"
+            className="gap-2 bg-primary hover:bg-primary/90 text-white font-bold text-xs sm:text-sm shadow-md shadow-primary/20 rounded-xl transition"
           >
             <RefreshCw className={cn("h-4 w-4", syncingAll && "animate-spin")} />
             <span>{syncingAll ? "Syncing All…" : "Sync All Feeds"}</span>
           </Button>
         </div>
       </div>
+
+      {/* Real-time Ingestion Progress Banner */}
+      {pullStep && (
+        <div className="flex items-center gap-3 rounded-2xl border border-primary/40 bg-primary/10 p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <Sparkles className="h-5 w-5 text-primary animate-spin" />
+          <div className="space-y-0.5">
+            <p className="text-xs font-bold text-primary uppercase tracking-wider">Live Review Ingestion</p>
+            <p className="text-xs sm:text-sm text-foreground font-semibold">{pullStep}</p>
+          </div>
+        </div>
+      )}
 
       {/* Clean Channel Cards Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

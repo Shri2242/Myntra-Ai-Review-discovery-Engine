@@ -41,6 +41,7 @@ interface AppState {
   // Real-time review increment across manual pulls
   extraReviewsCount: number;
   incrementExtraReviews: (amount?: number) => number;
+  resetExtraReviews: () => void;
 }
 
 export const useApp = create<AppState>((set, get) => {
@@ -101,6 +102,13 @@ export const useApp = create<AppState>((set, get) => {
         window.dispatchEvent(new Event("rp-refresh"));
       }
       return next;
+    },
+    resetExtraReviews: () => {
+      set({ extraReviewsCount: 0 });
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("rp_extra_reviews");
+        window.dispatchEvent(new Event("rp-refresh"));
+      }
     },
   };
 });
