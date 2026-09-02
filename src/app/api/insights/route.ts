@@ -49,27 +49,38 @@ const DEFAULT_INSIGHTS = {
   ],
   featureRequests: [
     {
-      title: "Split-Screen Garment Comparison Table",
-      theme: "Usability",
-      count: 35,
-      urgency: 85,
-      description: "Side-by-side spec comparison tool for wishlisted dresses, heels, and ethnic sets.",
-    },
-    {
-      title: "Wishlist Sub-Folders (Occasion-Based)",
       theme: "Features",
-      count: 42,
-      urgency: 90,
-      description: "Organize wishlists into 'Workwear', 'Vacation', 'Wedding', and 'Festive' categories.",
+      count: 56,
+      samples: [
+        { text: "Wishlist should have sub-folders like 'Office Workwear', 'Goa Vacation', 'Wedding Party' instead of 200 items in one endless scroll.", rating: 4, source: "reddit" },
+        { text: "I wish Myntra had a 'Notify me when back in stock' that actually works reliably for wishlisted items.", rating: 4, source: "app_store" },
+      ],
     },
     {
-      title: "Price Drop History Graph (Keepa-style)",
+      theme: "Usability",
+      count: 42,
+      samples: [
+        { text: "We need a split-screen spec comparison tool to compare wishlisted items side by side on fabric and return policies.", rating: 4, source: "app_store" },
+        { text: "Show actual garment measurements in cm directly on the size selector instead of standard S/M/L.", rating: 4, source: "reddit" },
+      ],
+    },
+    {
       theme: "Pricing",
       count: 28,
-      urgency: 78,
-      description: "Historical price tracking to provide discount authenticity during EORS sales.",
+      samples: [
+        { text: "I wish Myntra had a price drop history chart like Keepa on Amazon to give confidence during sales.", rating: 4, source: "reddit" },
+      ],
     },
   ],
+  weeklySummary: {
+    weekRange: "Past 7 Days",
+    totalReviews: 175,
+    totalThisWeek: 175,
+    totalLastWeek: 148,
+    topTheme: "Usability (Fit & Sizing)",
+    negativeShare: 32,
+    bugCount: 42,
+  },
   totalAnalyzed: 175,
 };
 
@@ -137,6 +148,7 @@ export async function GET(req: NextRequest) {
       topIssues: topIssues.length > 0 ? topIssues : DEFAULT_INSIGHTS.topIssues,
       emergingTrends: DEFAULT_INSIGHTS.emergingTrends,
       featureRequests: DEFAULT_INSIGHTS.featureRequests,
+      weeklySummary: DEFAULT_INSIGHTS.weeklySummary,
       totalAnalyzed: reviews.length,
     });
   } catch (err) {
