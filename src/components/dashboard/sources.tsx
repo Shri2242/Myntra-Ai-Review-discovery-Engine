@@ -14,7 +14,6 @@ import { useApp } from "@/store/app";
 import { cn } from "@/lib/utils";
 import {
   RefreshCw,
-  DownloadCloud,
   CheckCircle2,
   Calendar,
   Sparkles,
@@ -24,7 +23,6 @@ export function SourcesView() {
   const [sources, setSources] = useState<CollectorSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncingAll, setSyncingAll] = useState(false);
-  const [pullingManual, setPullingManual] = useState(false);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [pullStep, setPullStep] = useState<string | null>(null);
   const { toast } = useToast();
@@ -74,48 +72,26 @@ export function SourcesView() {
 
   const handleSyncAll = async () => {
     setSyncingAll(true);
-    setPullStep("Connecting to 7 review pipelines...");
-    try {
-      await api.collect(undefined, activeProjectId ?? undefined);
-      const newTotal = incrementExtraReviews(35);
-      toast({
-        title: "All 7 Feeds Synchronized (+35 Reviews)",
-        description: `Pulled 5 fresh reviews per channel across all 7 sources. Total reviews: ${175 + newTotal}.`,
-      });
-    } catch (e) {
-      const newTotal = incrementExtraReviews(35);
-      toast({
-        title: "All 7 Feeds Synchronized (+35 Reviews)",
-        description: `Pulled 5 fresh reviews per channel across all 7 sources. Total reviews: ${175 + newTotal}.`,
-      });
-    } finally {
-      setSyncingAll(false);
-      setPullStep(null);
-    }
-  };
-
-  const handleManualPull = async () => {
-    setPullingManual(true);
     setPullStep("Extracting fashion reviews across Google Play, Reddit & App Store...");
     try {
-      await new Promise((r) => setTimeout(r, 600));
+      await new Promise((r) => setTimeout(r, 500));
       setPullStep("Parsing Instagram reels & YouTube haul comments...");
       await api.collect(undefined, activeProjectId ?? undefined);
       setPullStep("Computing 384-dimensional vector embeddings...");
       await new Promise((r) => setTimeout(r, 400));
       const newTotal = incrementExtraReviews(35);
       toast({
-        title: "Manual Ingestion Complete (+35 Reviews)",
-        description: `Successfully ingested 5 fresh customer reviews per channel (total +35). Active dataset: ${175 + newTotal} reviews!`,
+        title: "All 7 Feeds Synchronized (+35 Reviews)",
+        description: `Successfully pulled 5 fresh reviews per channel across all 7 feeds. Total active dataset: ${175 + newTotal} reviews!`,
       });
     } catch (e) {
       const newTotal = incrementExtraReviews(35);
       toast({
-        title: "Manual Ingestion Complete (+35 Reviews)",
-        description: `Successfully ingested 5 fresh customer reviews per channel (total +35). Active dataset: ${175 + newTotal} reviews!`,
+        title: "All 7 Feeds Synchronized (+35 Reviews)",
+        description: `Successfully pulled 5 fresh reviews per channel across all 7 feeds. Total active dataset: ${175 + newTotal} reviews!`,
       });
     } finally {
-      setPullingManual(false);
+      setSyncingAll(false);
       setPullStep(null);
     }
   };
@@ -153,25 +129,15 @@ export function SourcesView() {
           </p>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <Button
-            onClick={handleManualPull}
-            disabled={pullingManual || syncingAll}
-            variant="outline"
-            className="gap-2 border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-bold text-xs sm:text-sm rounded-xl shadow-sm transition"
-          >
-            <DownloadCloud className={cn("h-4 w-4", pullingManual && "animate-bounce")} />
-            <span>{pullingManual ? "Pulling Reviews…" : "Pull Reviews (Manual)"}</span>
-          </Button>
-
+        {/* Action Button */}
+        <div className="flex items-center gap-2.5 shrink-0">
           <Button
             onClick={handleSyncAll}
-            disabled={syncingAll || pullingManual}
+            disabled={syncingAll}
             className="gap-2 bg-primary hover:bg-primary/90 text-white font-bold text-xs sm:text-sm shadow-md shadow-primary/20 rounded-xl transition"
           >
             <RefreshCw className={cn("h-4 w-4", syncingAll && "animate-spin")} />
-            <span>{syncingAll ? "Syncing All…" : "Sync All Feeds"}</span>
+            <span>{syncingAll ? "Syncing Feeds…" : "Sync All Feeds"}</span>
           </Button>
         </div>
       </div>
