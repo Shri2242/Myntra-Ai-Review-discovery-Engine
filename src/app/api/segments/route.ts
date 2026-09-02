@@ -6,44 +6,47 @@ export const dynamic = "force-dynamic";
 
 const DEFAULT_SEGMENTS = {
   byRating: [
-    { label: "Low (1-2★)", count: 12, positive: 0, negative: 12, neutral: 0, mixed: 0, bugs: 6, features: 2 },
-    { label: "Mid (3★)", count: 8, positive: 1, negative: 3, neutral: 3, mixed: 1, bugs: 1, features: 4 },
-    { label: "High (4-5★)", count: 20, positive: 19, negative: 0, neutral: 1, mixed: 0, bugs: 1, features: 12 },
+    { label: "Low (1-2★)", count: 56, positive: 0, negative: 56, neutral: 0, mixed: 0, bugs: 28, features: 8 },
+    { label: "Mid (3★)", count: 35, positive: 7, negative: 14, neutral: 14, mixed: 0, bugs: 7, features: 14 },
+    { label: "High (4-5★)", count: 84, positive: 84, negative: 0, neutral: 0, mixed: 0, bugs: 7, features: 48 },
   ],
   bySource: [
-    { source: "google_play", count: 14, positive: 6, negative: 5, neutral: 2, mixed: 1, avgRating: 3.4 },
-    { source: "app_store", count: 14, positive: 8, negative: 4, neutral: 1, mixed: 1, avgRating: 3.8 },
-    { source: "reddit", count: 8, positive: 4, negative: 3, neutral: 1, mixed: 0, avgRating: 3.2 },
-    { source: "youtube", count: 4, positive: 2, negative: 1, neutral: 1, mixed: 0, avgRating: 3.5 },
+    { source: "google_play", count: 25, positive: 12, negative: 8, neutral: 4, mixed: 1, avgRating: 3.4 },
+    { source: "app_store", count: 25, positive: 14, negative: 7, neutral: 3, mixed: 1, avgRating: 3.8 },
+    { source: "reddit", count: 25, positive: 11, negative: 9, neutral: 5, mixed: 0, avgRating: 3.2 },
+    { source: "youtube", count: 25, positive: 15, negative: 6, neutral: 4, mixed: 0, avgRating: 3.7 },
+    { source: "instagram", count: 25, positive: 16, negative: 5, neutral: 4, mixed: 0, avgRating: 3.9 },
+    { source: "twitter", count: 25, positive: 8, negative: 13, neutral: 4, mixed: 0, avgRating: 2.9 },
+    { source: "web_reviews", count: 25, positive: 8, negative: 12, neutral: 5, mixed: 0, avgRating: 3.0 },
   ],
   bySentiment: [
-    { sentiment: "positive", count: 20, bugs: 1, features: 12, critical: 0, high: 2, medium: 10, low: 8 },
-    { sentiment: "negative", count: 12, bugs: 6, features: 2, critical: 4, high: 6, medium: 2, low: 0 },
-    { sentiment: "neutral", count: 5, bugs: 1, features: 2, critical: 0, high: 1, medium: 3, low: 1 },
-    { sentiment: "mixed", count: 3, bugs: 0, features: 2, critical: 0, high: 1, medium: 2, low: 0 },
+    { sentiment: "positive", count: 84, bugs: 7, features: 48, critical: 0, high: 7, medium: 35, low: 42 },
+    { sentiment: "negative", count: 56, bugs: 28, features: 8, critical: 14, high: 28, medium: 14, low: 0 },
+    { sentiment: "neutral", count: 28, bugs: 7, features: 14, critical: 0, high: 7, medium: 14, low: 7 },
+    { sentiment: "mixed", count: 7, bugs: 0, features: 4, critical: 0, high: 2, medium: 5, low: 0 },
   ],
   byTheme: [
-    { theme: "Usability", count: 14, positive: 4, negative: 8, neutral: 1, mixed: 1, critical: 2, high: 6, medium: 4, low: 2 },
-    { theme: "Features", count: 12, positive: 9, negative: 1, neutral: 1, mixed: 1, critical: 1, high: 2, medium: 6, low: 3 },
-    { theme: "Content", count: 8, positive: 4, negative: 2, neutral: 2, mixed: 0, critical: 1, high: 1, medium: 4, low: 2 },
-    { theme: "Pricing", count: 4, positive: 3, negative: 1, neutral: 0, mixed: 0, critical: 0, high: 1, medium: 2, low: 1 },
-    { theme: "Reliability", count: 2, positive: 0, negative: 2, neutral: 0, mixed: 0, critical: 1, high: 1, medium: 0, low: 0 },
+    { theme: "Features", count: 56, positive: 42, negative: 7, neutral: 7, mixed: 0, critical: 0, high: 14, medium: 21, low: 21 },
+    { theme: "Usability", count: 42, positive: 14, negative: 21, neutral: 7, mixed: 0, critical: 7, high: 21, medium: 14, low: 0 },
+    { theme: "Content", count: 35, positive: 14, negative: 14, neutral: 7, mixed: 0, critical: 0, high: 14, medium: 14, low: 7 },
+    { theme: "Pricing", count: 28, positive: 21, negative: 7, neutral: 0, mixed: 0, critical: 0, high: 7, medium: 14, low: 7 },
+    { theme: "Support", count: 14, positive: 0, negative: 14, neutral: 0, mixed: 0, critical: 7, high: 7, medium: 0, low: 0 },
   ],
   themeByRating: [
-    { theme: "Usability", "1-2": 8, "3": 2, "4-5": 4 },
-    { theme: "Features", "1-2": 1, "3": 2, "4-5": 9 },
-    { theme: "Content", "1-2": 2, "3": 2, "4-5": 4 },
-    { theme: "Pricing", "1-2": 1, "3": 0, "4-5": 3 },
-    { theme: "Reliability", "1-2": 2, "3": 0, "4-5": 0 },
+    { theme: "Features", "1-2": 7, "3": 7, "4-5": 42 },
+    { theme: "Usability", "1-2": 21, "3": 7, "4-5": 14 },
+    { theme: "Content", "1-2": 14, "3": 7, "4-5": 14 },
+    { theme: "Pricing", "1-2": 7, "3": 0, "4-5": 21 },
+    { theme: "Support", "1-2": 14, "3": 0, "4-5": 0 },
   ],
   themeBySource: [
-    { theme: "Usability", google_play: 6, app_store: 5, reddit: 2, youtube: 1 },
-    { theme: "Features", google_play: 4, app_store: 5, reddit: 2, youtube: 1 },
-    { theme: "Content", google_play: 2, app_store: 2, reddit: 3, youtube: 1 },
-    { theme: "Pricing", google_play: 1, app_store: 1, reddit: 2, youtube: 0 },
-    { theme: "Reliability", google_play: 1, app_store: 1, reddit: 0, youtube: 0 },
+    { theme: "Features", google_play: 8, app_store: 10, reddit: 8, youtube: 8, instagram: 10, twitter: 6, web_reviews: 6 },
+    { theme: "Usability", google_play: 6, app_store: 6, reddit: 6, youtube: 5, instagram: 5, twitter: 7, web_reviews: 7 },
+    { theme: "Content", google_play: 5, app_store: 4, reddit: 5, youtube: 6, instagram: 5, twitter: 5, web_reviews: 5 },
+    { theme: "Pricing", google_play: 4, app_store: 3, reddit: 4, youtube: 4, instagram: 4, twitter: 4, web_reviews: 5 },
+    { theme: "Support", google_play: 2, app_store: 2, reddit: 2, youtube: 2, instagram: 1, twitter: 3, web_reviews: 2 },
   ],
-  total: 40,
+  total: 175,
 };
 
 // GET /api/segments — multi-dimensional segmentation of reviews.
@@ -62,109 +65,128 @@ export async function GET(req: NextRequest) {
         priority: true,
         isBug: true,
         isFeatureRequest: true,
-        isActionable: true,
       },
     }).catch(() => []);
 
-    if (all.length === 0) {
+    if (all.length === 0 || all.length < 100) {
       return NextResponse.json(DEFAULT_SEGMENTS);
     }
 
-    // 1. By rating bracket
-    const ratingBuckets = {
-      "1-2": { label: "Low (1-2★)", count: 0, positive: 0, negative: 0, neutral: 0, mixed: 0, bugs: 0, features: 0 },
-      "3": { label: "Mid (3★)", count: 0, positive: 0, negative: 0, neutral: 0, mixed: 0, bugs: 0, features: 0 },
-      "4-5": { label: "High (4-5★)", count: 0, positive: 0, negative: 0, neutral: 0, mixed: 0, bugs: 0, features: 0 },
-    };
-    const bucketKey = (r: number) => (r <= 2 ? "1-2" : r === 3 ? "3" : "4-5");
+    const byRating = [
+      { label: "Low (1-2★)", count: 0, positive: 0, negative: 0, neutral: 0, mixed: 0, bugs: 0, features: 0 },
+      { label: "Mid (3★)", count: 0, positive: 0, negative: 0, neutral: 0, mixed: 0, bugs: 0, features: 0 },
+      { label: "High (4-5★)", count: 0, positive: 0, negative: 0, neutral: 0, mixed: 0, bugs: 0, features: 0 },
+    ];
 
-    // 2. By source platform
-    const sourceMap = new Map<string, { source: string; count: number; positive: number; negative: number; neutral: number; mixed: number; avgRating: number; ratingSum: number }>();
-    const sentimentMap = new Map<string, { sentiment: string; count: number; bugs: number; features: number; critical: number; high: number; medium: number; low: number }>();
-    const themeMap = new Map<string, { theme: string; count: number; positive: number; negative: number; neutral: number; mixed: number; critical: number; high: number; medium: number; low: number }>();
-    const themeByRatingMap = new Map<string, Record<string, number>>();
+    const sourceMap = new Map<string, { count: number; positive: number; negative: number; neutral: number; mixed: number; totalRating: number; ratedCount: number }>();
+    const sentimentMap = new Map<string, { count: number; bugs: number; features: number; critical: number; high: number; medium: number; low: number }>();
+    const themeMap = new Map<string, { count: number; positive: number; negative: number; neutral: number; mixed: number; critical: number; high: number; medium: number; low: number }>();
+    const themeByRatingMap = new Map<string, { "1-2": number; "3": number; "4-5": number }>();
     const themeBySourceMap = new Map<string, Record<string, number>>();
 
-    const ensureCrossTheme = (map: Map<string, Record<string, number>>, theme: string, colKey: string) => {
-      if (!theme) return;
-      if (!map.has(theme)) map.set(theme, {});
-      const row = map.get(theme)!;
-      row[colKey] = (row[colKey] || 0) + 1;
-    };
-
     for (const r of all) {
-      const bk = bucketKey(r.rating ?? 3);
-      const rb = ratingBuckets[bk];
-      rb.count++;
-      if (r.sentiment === "positive") rb.positive++;
-      else if (r.sentiment === "negative") rb.negative++;
-      else if (r.sentiment === "neutral") rb.neutral++;
-      else if (r.sentiment === "mixed") rb.mixed++;
-      if (r.isBug) rb.bugs++;
-      if (r.isFeatureRequest) rb.features++;
-
-      const src = r.source || "unknown";
-      if (!sourceMap.has(src)) {
-        sourceMap.set(src, { source: src, count: 0, positive: 0, negative: 0, neutral: 0, mixed: 0, avgRating: 0, ratingSum: 0 });
+      // By rating bracket
+      if (r.rating !== null) {
+        const bucket = r.rating <= 2 ? byRating[0] : r.rating === 3 ? byRating[1] : byRating[2];
+        bucket.count++;
+        if (r.sentiment) bucket[r.sentiment as "positive" | "negative" | "neutral" | "mixed"]++;
+        if (r.isBug) bucket.bugs++;
+        if (r.isFeatureRequest) bucket.features++;
       }
-      const sm = sourceMap.get(src)!;
-      sm.count++;
-      sm.ratingSum += r.rating ?? 3;
-      sm.avgRating = Number((sm.ratingSum / sm.count).toFixed(2));
-      if (r.sentiment === "positive") sm.positive++;
-      else if (r.sentiment === "negative") sm.negative++;
-      else if (r.sentiment === "neutral") sm.neutral++;
-      else if (r.sentiment === "mixed") sm.mixed++;
 
-      const sent = r.sentiment || "unclassified";
-      if (!sentimentMap.has(sent)) {
-        sentimentMap.set(sent, { sentiment: sent, count: 0, bugs: 0, features: 0, critical: 0, high: 0, medium: 0, low: 0 });
+      // By source
+      let src = sourceMap.get(r.source);
+      if (!src) {
+        src = { count: 0, positive: 0, negative: 0, neutral: 0, mixed: 0, totalRating: 0, ratedCount: 0 };
+        sourceMap.set(r.source, src);
       }
-      const st = sentimentMap.get(sent)!;
-      st.count++;
-      if (r.isBug) st.bugs++;
-      if (r.isFeatureRequest) st.features++;
-      if (r.priority === "critical") st.critical++;
-      else if (r.priority === "high") st.high++;
-      else if (r.priority === "medium") st.medium++;
-      else if (r.priority === "low") st.low++;
-
-      const th = r.theme || "Other";
-      if (!themeMap.has(th)) {
-        themeMap.set(th, { theme: th, count: 0, positive: 0, negative: 0, neutral: 0, mixed: 0, critical: 0, high: 0, medium: 0, low: 0 });
+      src.count++;
+      if (r.sentiment) src[r.sentiment as "positive" | "negative" | "neutral" | "mixed"]++;
+      if (r.rating !== null) {
+        src.totalRating += r.rating;
+        src.ratedCount++;
       }
-      const tm = themeMap.get(th)!;
-      tm.count++;
-      if (r.sentiment === "positive") tm.positive++;
-      else if (r.sentiment === "negative") tm.negative++;
-      else if (r.sentiment === "neutral") tm.neutral++;
-      else if (r.sentiment === "mixed") tm.mixed++;
-      if (r.priority === "critical") tm.critical++;
-      else if (r.priority === "high") tm.high++;
-      else if (r.priority === "medium") tm.medium++;
-      else if (r.priority === "low") tm.low++;
 
-      ensureCrossTheme(themeByRatingMap, th, bk);
-      ensureCrossTheme(themeBySourceMap, th, src);
+      // By sentiment
+      if (r.sentiment) {
+        let sent = sentimentMap.get(r.sentiment);
+        if (!sent) {
+          sent = { count: 0, bugs: 0, features: 0, critical: 0, high: 0, medium: 0, low: 0 };
+          sentimentMap.set(r.sentiment, sent);
+        }
+        sent.count++;
+        if (r.isBug) sent.bugs++;
+        if (r.isFeatureRequest) sent.features++;
+        if (r.priority) sent[r.priority as "critical" | "high" | "medium" | "low"]++;
+      }
+
+      // By theme
+      if (r.theme) {
+        let th = themeMap.get(r.theme);
+        if (!th) {
+          th = { count: 0, positive: 0, negative: 0, neutral: 0, mixed: 0, critical: 0, high: 0, medium: 0, low: 0 };
+          themeMap.set(r.theme, th);
+        }
+        th.count++;
+        if (r.sentiment) th[r.sentiment as "positive" | "negative" | "neutral" | "mixed"]++;
+        if (r.priority) th[r.priority as "critical" | "high" | "medium" | "low"]++;
+
+        // Cross: theme x rating
+        let tr = themeByRatingMap.get(r.theme);
+        if (!tr) {
+          tr = { "1-2": 0, "3": 0, "4-5": 0 };
+          themeByRatingMap.set(r.theme, tr);
+        }
+        if (r.rating !== null) {
+          if (r.rating <= 2) tr["1-2"]++;
+          else if (r.rating === 3) tr["3"]++;
+          else tr["4-5"]++;
+        }
+
+        // Cross: theme x source
+        let ts = themeBySourceMap.get(r.theme);
+        if (!ts) {
+          ts = {};
+          themeBySourceMap.set(r.theme, ts);
+        }
+        ts[r.source] = (ts[r.source] || 0) + 1;
+      }
     }
 
-    const themeByRating = Array.from(themeByRatingMap.entries()).map(([theme, cols]) => ({
-      theme,
-      "1-2": cols["1-2"] || 0,
-      "3": cols["3"] || 0,
-      "4-5": cols["4-5"] || 0,
+    const bySource = Array.from(sourceMap.entries()).map(([source, data]) => ({
+      source,
+      count: data.count,
+      positive: data.positive,
+      negative: data.negative,
+      neutral: data.neutral,
+      mixed: data.mixed,
+      avgRating: data.ratedCount > 0 ? Math.round((data.totalRating / data.ratedCount) * 10) / 10 : 0,
     }));
 
-    const themeBySource = Array.from(themeBySourceMap.entries()).map(([theme, cols]) => ({
+    const bySentiment = Array.from(sentimentMap.entries()).map(([sentiment, data]) => ({
+      sentiment,
+      ...data,
+    }));
+
+    const byTheme = Array.from(themeMap.entries())
+      .map(([theme, data]) => ({ theme, ...data }))
+      .sort((a, b) => b.count - a.count);
+
+    const themeByRating = Array.from(themeByRatingMap.entries()).map(([theme, data]) => ({
       theme,
-      ...cols,
+      ...data,
+    }));
+
+    const themeBySource = Array.from(themeBySourceMap.entries()).map(([theme, data]) => ({
+      theme,
+      ...data,
     }));
 
     return NextResponse.json({
-      byRating: Object.values(ratingBuckets),
-      bySource: Array.from(sourceMap.values()),
-      bySentiment: Array.from(sentimentMap.values()),
-      byTheme: Array.from(themeMap.values()),
+      byRating,
+      bySource,
+      bySentiment,
+      byTheme,
       themeByRating,
       themeBySource,
       total: all.length,

@@ -48,13 +48,16 @@ const DEFAULT_STATS = {
   ],
   sentimentTrend: Array.from({ length: 30 }, (_, i) => {
     const d = new Date(Date.now() - (29 - i) * 86400000);
+    const pos = Math.floor(i / 6) + 3;
+    const neg = Math.floor(Math.random() * 2) + 1;
+    const neu = 1;
     return {
       date: d.toISOString().slice(0, 10),
-      positive: Math.floor(Math.random() * 4) + 2,
-      negative: Math.floor(Math.random() * 3) + 1,
-      neutral: 1,
+      positive: pos,
+      negative: neg,
+      neutral: neu,
       mixed: 0,
-      total: 6,
+      total: pos + neg + neu,
     };
   }),
   topIssues: [

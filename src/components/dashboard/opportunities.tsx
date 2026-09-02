@@ -211,7 +211,7 @@ const OPPORTUNITY_AREAS: OpportunityArea[] = [
 export function OpportunitiesView() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeOpportunity, setActiveOpportunity] = useState<OpportunityArea>(OPPORTUNITY_AREAS[0]);
-  const [reviewTotal, setReviewTotal] = useState<number>(40);
+  const [reviewTotal, setReviewTotal] = useState<number>(175);
   const activeProjectId = useApp((s) => s.activeProjectId);
   const setView = useApp((s) => s.setView);
 
