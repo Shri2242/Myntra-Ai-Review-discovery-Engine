@@ -17,9 +17,7 @@ import {
   DownloadCloud,
   CheckCircle2,
   Calendar,
-  RotateCcw,
   Sparkles,
-  Zap,
 } from "lucide-react";
 
 export function SourcesView() {
@@ -33,7 +31,6 @@ export function SourcesView() {
   const activeProjectId = useApp((s) => s.activeProjectId);
   const extraReviewsCount = useApp((s) => s.extraReviewsCount);
   const incrementExtraReviews = useApp((s) => s.incrementExtraReviews);
-  const resetExtraReviews = useApp((s) => s.resetExtraReviews);
 
   const fetchSources = async () => {
     try {
@@ -62,13 +59,13 @@ export function SourcesView() {
       const newTotal = incrementExtraReviews(7);
       toast({
         title: `Pulled 7 Fresh Reviews from ${s.name}`,
-        description: `Source feed updated! Total dataset now contains ${175 + newTotal} reviews.`,
+        description: `Source feed updated! Total dataset now contains ${175 + newTotal} reviews across all views.`,
       });
     } catch (e) {
       const newTotal = incrementExtraReviews(7);
       toast({
         title: `Pulled 7 Fresh Reviews from ${s.name}`,
-        description: `Source feed updated! Total dataset now contains ${175 + newTotal} reviews.`,
+        description: `Source feed updated! Total dataset now contains ${175 + newTotal} reviews across all views.`,
       });
     } finally {
       setSyncingId(null);
@@ -123,14 +120,6 @@ export function SourcesView() {
     }
   };
 
-  const handleResetBaseline = () => {
-    resetExtraReviews();
-    toast({
-      title: "Dataset Reset to Baseline (175 Reviews)",
-      description: "Restored balanced 25 reviews per channel across all 7 feeds.",
-    });
-  };
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -166,19 +155,6 @@ export function SourcesView() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          {extraReviewsCount > 0 && (
-            <Button
-              onClick={handleResetBaseline}
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground font-semibold rounded-xl"
-              title="Reset reviews back to baseline 175"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span>Reset to 175</span>
-            </Button>
-          )}
-
           <Button
             onClick={handleManualPull}
             disabled={pullingManual || syncingAll}
