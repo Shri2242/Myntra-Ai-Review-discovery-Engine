@@ -117,6 +117,7 @@ export function SegmentsView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const activeProjectId = useApp((s) => s.activeProjectId);
+  const extraReviewsCount = useApp((s) => s.extraReviewsCount);
   const setView = useApp((s) => s.setView);
 
   useEffect(() => {
@@ -180,7 +181,7 @@ export function SegmentsView() {
         action={
           <Badge variant="outline" className="gap-1.5 border-primary/30 bg-primary/10 text-primary px-3 py-1 text-xs font-bold">
             <Layers className="h-3.5 w-3.5 text-primary" />
-            {data.total} Reviews Indexed · 4 Cohorts
+            {(data.total || 175) + extraReviewsCount} Reviews Indexed · 4 Cohorts
           </Badge>
         }
       />

@@ -35,6 +35,7 @@ export function InsightsView() {
   const [error, setError] = useState<string | null>(null);
   const setView = useApp((s) => s.setView);
   const activeProjectId = useApp((s) => s.activeProjectId);
+  const extraReviewsCount = useApp((s) => s.extraReviewsCount);
 
   useEffect(() => {
     let alive = true;
@@ -135,7 +136,7 @@ export function InsightsView() {
           <div className="flex items-center gap-4 shrink-0">
             <div className="rounded-xl border border-border bg-card p-4 text-center min-w-[120px] shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Total Reviews</p>
-              <p className="mt-1 font-heading text-2xl font-black text-foreground">{ws.totalThisWeek}</p>
+              <p className="mt-1 font-heading text-2xl font-black text-foreground">{ws.totalThisWeek + extraReviewsCount}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 text-center min-w-[120px] shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Bug Reports</p>

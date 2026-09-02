@@ -211,6 +211,7 @@ const OPPORTUNITY_AREAS: OpportunityArea[] = [
 export function OpportunitiesView() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeOpportunity, setActiveOpportunity] = useState<OpportunityArea>(OPPORTUNITY_AREAS[0]);
+  const extraReviewsCount = useApp((s) => s.extraReviewsCount);
   const [reviewTotal, setReviewTotal] = useState<number>(175);
   const activeProjectId = useApp((s) => s.activeProjectId);
   const setView = useApp((s) => s.setView);
@@ -254,7 +255,7 @@ export function OpportunitiesView() {
         <StatCard
           label="Identified Opportunities"
           value="6 Priority Areas"
-          deltaLabel={`Across ${reviewTotal}+ live review patterns`}
+          deltaLabel={`Across ${reviewTotal + extraReviewsCount}+ live review patterns`}
           accent="blue"
           icon={<Target className="h-4 w-4" />}
         />
