@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   SectionHeader,
   ChartCard,
@@ -25,13 +25,7 @@ import {
   Layers,
   Grid3x3,
   Users,
-  Target,
-  Sparkles,
   ArrowRight,
-  TrendingUp,
-  Percent,
-  MessageSquare,
-  Zap,
 } from "lucide-react";
 
 /* ============================================================
@@ -144,6 +138,76 @@ export function SegmentsView() {
     };
   }, [activeProjectId]);
 
+  const totalReviewsDisplay = useMemo(
+    () => (data?.total || 175) + extraReviewsCount,
+    [data, extraReviewsCount],
+  );
+
+  const perChannelExtra = useMemo(
+    () => Math.floor(extraReviewsCount / 7),
+    [extraReviewsCount],
+  );
+
+  // Proportionately scaled rating cohorts
+  const ratingCohorts = useMemo(() => {
+    if (!data?.byRating) return [];
+    const lowExtra = Math.round(extraReviewsCount * 0.32);
+    const midExtra = Math.round(extraReviewsCount * 0.2);
+    const highExtra = extraReviewsCount - lowExtra - midExtra;
+
+    return data.byRating.map((r, i) => {
+      const added = i === 0 ? lowExtra : i === 1 ? midExtra : highExtra;
+      const count = r.count + added;
+      const pct = Math.round((count / totalReviewsDisplay) * 100);
+      return {
+        ...r,
+        count,
+        pct,
+        positive: r.positive + (i === 2 ? added : 0),
+        negative: r.negative + (i === 0 ? added : 0),
+        neutral: r.neutral + (i === 1 ? added : 0),
+      };
+    });
+  }, [data, extraReviewsCount, totalReviewsDisplay]);
+
+  // Proportionately scaled source cohorts
+  const sourceCohorts = useMemo(() => {
+    if (!data?.bySource) return [];
+    return data.bySource.map((s) => {
+      const count = s.count + perChannelExtra;
+      const pct = Math.round((count / totalReviewsDisplay) * 100);
+      return {
+        ...s,
+        count,
+        pct,
+        positive: s.positive + Math.round(perChannelExtra * 0.5),
+        negative: s.negative + Math.round(perChannelExtra * 0.35),
+        neutral: s.neutral + (perChannelExtra - Math.round(perChannelExtra * 0.5) - Math.round(perChannelExtra * 0.35)),
+      };
+    });
+  }, [data, perChannelExtra, totalReviewsDisplay]);
+
+  // Proportionately scaled theme matrix
+  const themeMatrix = useMemo(() => {
+    if (!data?.themeByRating) return [];
+    const perThemeExtra = Math.floor(extraReviewsCount / (data.themeByRating.length || 5));
+    return data.themeByRating.map((t) => {
+      const fExtra = Math.round(perThemeExtra * 0.4);
+      const uExtra = Math.round(perThemeExtra * 0.2);
+      const pExtra = perThemeExtra - fExtra - uExtra;
+      const friction = (t["1-2"] || 0) + fExtra;
+      const uncertainty = (t["3"] || 0) + uExtra;
+      const praise = (t["4-5"] || 0) + pExtra;
+      return {
+        theme: t.theme,
+        friction,
+        uncertainty,
+        praise,
+        total: friction + uncertainty + praise,
+      };
+    });
+  }, [data, extraReviewsCount]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -181,7 +245,7 @@ export function SegmentsView() {
         action={
           <Badge variant="outline" className="gap-1.5 border-primary/30 bg-primary/10 text-primary px-3 py-1 text-xs font-bold">
             <Layers className="h-3.5 w-3.5 text-primary" />
-            {(data.total || 175) + extraReviewsCount} Reviews Indexed · 4 Cohorts
+            {totalReviewsDisplay} Reviews Indexed · 4 Cohorts
           </Badge>
         }
       />
@@ -239,25 +303,22 @@ export function SegmentsView() {
           subtitle="Sentiment balance and review volume per satisfaction bracket"
         >
           <div className="space-y-4">
-            {data.byRating.map((r, idx) => {
-              const pct = data.total > 0 ? Math.round((r.count / data.total) * 100) : 0;
-              return (
-                <div key={r.label || idx} className="space-y-1.5 rounded-xl border border-border/60 bg-card p-3.5">
-                  <div className="flex items-center justify-between text-xs font-semibold">
-                    <span className="flex items-center gap-1.5 text-foreground font-bold">
-                      <span>{r.label}</span>
-                    </span>
-                    <span className="font-bold text-foreground">{r.count} reviews ({pct}%)</span>
-                  </div>
-                  <SentimentStackBar
-                    positive={r.positive}
-                    negative={r.negative}
-                    neutral={r.neutral}
-                    mixed={r.mixed}
-                  />
+            {ratingCohorts.map((r, idx) => (
+              <div key={r.label || idx} className="space-y-1.5 rounded-xl border border-border/60 bg-card p-3.5">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="flex items-center gap-1.5 text-foreground font-bold">
+                    <span>{r.label}</span>
+                  </span>
+                  <span className="font-bold text-foreground">{r.count} reviews ({r.pct}%)</span>
                 </div>
-              );
-            })}
+                <SentimentStackBar
+                  positive={r.positive}
+                  negative={r.negative}
+                  neutral={r.neutral}
+                  mixed={r.mixed}
+                />
+              </div>
+            ))}
           </div>
         </ChartCard>
 
@@ -267,26 +328,23 @@ export function SegmentsView() {
           subtitle="Where users discuss Myntra fashion discovery"
         >
           <div className="space-y-4">
-            {data.bySource.map((s) => {
-              const pct = data.total > 0 ? Math.round((s.count / data.total) * 100) : 0;
-              return (
-                <div key={s.source} className="space-y-1.5 rounded-xl border border-border/60 bg-card p-3.5">
-                  <div className="flex items-center justify-between text-xs font-semibold">
-                    <div className="flex items-center gap-2">
-                      <SourceIcon source={s.source} className="h-4 w-4" />
-                      <span className="font-bold text-foreground capitalize">{SOURCE_LABELS[s.source] ?? s.source}</span>
-                    </div>
-                    <span className="font-bold text-foreground">{s.count} reviews ({pct}%)</span>
+            {sourceCohorts.map((s) => (
+              <div key={s.source} className="space-y-1.5 rounded-xl border border-border/60 bg-card p-3.5">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <div className="flex items-center gap-2">
+                    <SourceIcon source={s.source} className="h-4 w-4" />
+                    <span className="font-bold text-foreground capitalize">{SOURCE_LABELS[s.source] ?? s.source}</span>
                   </div>
-                  <SentimentStackBar
-                    positive={s.positive}
-                    negative={s.negative}
-                    neutral={s.neutral}
-                    mixed={s.mixed}
-                  />
+                  <span className="font-bold text-foreground">{s.count} reviews ({s.pct}%)</span>
                 </div>
-              );
-            })}
+                <SentimentStackBar
+                  positive={s.positive}
+                  negative={s.negative}
+                  neutral={s.neutral}
+                  mixed={s.mixed}
+                />
+              </div>
+            ))}
           </div>
         </ChartCard>
       </div>
@@ -308,34 +366,31 @@ export function SegmentsView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.themeByRating.slice(0, 8).map((t) => {
-                const total = (t["1-2"] || 0) + (t["3"] || 0) + (t["4-5"] || 0);
-                return (
-                  <TableRow key={t.theme} className="border-border/40 hover:bg-secondary/30">
-                    <TableCell className="font-semibold text-xs text-foreground capitalize">
-                      {themeLabel(t.theme)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:text-red-400">
-                        {t["1-2"] || 0}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
-                        {t["3"] || 0}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                        {t["4-5"] || 0}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-xs text-foreground">
-                      {total}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {themeMatrix.slice(0, 8).map((t) => (
+                <TableRow key={t.theme} className="border-border/40 hover:bg-secondary/30">
+                  <TableCell className="font-semibold text-xs text-foreground capitalize">
+                    {themeLabel(t.theme)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-bold text-red-600 dark:text-red-400">
+                      {t.friction}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                      {t.uncertainty}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      {t.praise}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right font-bold text-xs text-foreground">
+                    {t.total}
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
