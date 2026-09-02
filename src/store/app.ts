@@ -51,7 +51,7 @@ export const useApp = create<AppState>((set, get) => {
     view: "chat",
     setView: (view) => set({ view }),
 
-    theme: "light",
+    theme: (typeof window !== "undefined" && (localStorage.getItem("rp_theme") as "light" | "dark")) || "dark",
     setTheme: (theme) => {
       set({ theme });
       if (typeof window !== "undefined") {

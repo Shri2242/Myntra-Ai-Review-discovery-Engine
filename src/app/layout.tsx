@@ -50,16 +50,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                const t = localStorage.getItem('rp_theme') || 'light';
-                if (t === 'dark') document.documentElement.classList.add('dark');
-                else document.documentElement.classList.remove('dark');
-              } catch (e) {}
+                const t = localStorage.getItem('rp_theme') || 'dark';
+                if (t === 'light') {
+                  document.documentElement.classList.remove('dark');
+                } else {
+                  document.documentElement.classList.add('dark');
+                }
+              } catch (e) {
+                document.documentElement.classList.add('dark');
+              }
             `,
           }}
         />
