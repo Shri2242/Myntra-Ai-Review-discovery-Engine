@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Moon,
   Sun,
+  X,
 } from "lucide-react";
 import { MyntraLogo } from "@/components/ui/myntra-logo";
 import { api } from "@/lib/api";
@@ -34,7 +35,16 @@ const NAV: NavItem[] = [
 ];
 
 export function Sidebar() {
-  const { view, setView, theme, toggleTheme, activeProjectId, incrementExtraReviews } = useApp();
+  const {
+    view,
+    setView,
+    theme,
+    toggleTheme,
+    activeProjectId,
+    incrementExtraReviews,
+    mobileMenuOpen,
+    setMobileMenuOpen,
+  } = useApp();
   const { toast } = useToast();
   const [syncing, setSyncing] = useState(false);
 
@@ -42,7 +52,6 @@ export function Sidebar() {
     if (syncing) return;
     setSyncing(true);
     try {
-      // 1. Pull new reviews and auto-index
       await api.collect(undefined, activeProjectId ?? undefined).catch(() => null);
       const newTotal = incrementExtraReviews(35);
 
@@ -51,7 +60,6 @@ export function Sidebar() {
         description: `Successfully ingested fresh reviews across all 7 channels. Active dataset: ${175 + newTotal} reviews!`,
       });
 
-      // 2. Broadcast live refresh to Dashboard, Opportunity Areas, Segments, Insights, and AI Assistant
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("rp-refresh"));
       }
@@ -69,23 +77,33 @@ export function Sidebar() {
     }
   };
 
-  return (
-    <aside className="flex h-full w-[240px] shrink-0 flex-col justify-between border-r border-border bg-sidebar px-4 py-5 transition-colors">
+  const navContent = (
+    <>
       {/* Top Header & Nav */}
       <div className="space-y-6">
-        {/* Brand Logo */}
-        <div className="flex items-center gap-3 px-1">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 shadow-sm">
-            <MyntraLogo className="h-6 w-6" />
+        {/* Brand Logo & Close Button on Mobile */}
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 shadow-sm">
+              <MyntraLogo className="h-6 w-6" />
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="font-heading text-sm font-extrabold tracking-tight text-foreground">
+                Discovery
+              </span>
+              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                Research Engine
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col leading-tight">
-            <span className="font-heading text-sm font-extrabold tracking-tight text-foreground">
-              Discovery
-            </span>
-            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-              Research Engine
-            </span>
-          </div>
+
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground md:hidden"
+            aria-label="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Navigation list */}
@@ -96,7 +114,10 @@ export function Sidebar() {
             return (
               <button
                 key={item.key}
-                onClick={() => setView(item.key)}
+                onClick={() => {
+                  setView(item.key);
+                  setMobileMenuOpen(false);
+                }}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all",
                   active
@@ -142,6 +163,31 @@ export function Sidebar() {
           )}
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden md:flex h-full w-64 shrink-0 flex-col justify-between border-r border-border bg-sidebar px-4 py-5 transition-colors">
+        {navContent}
+      </aside>
+
+      {/* Mobile Backdrop & Drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          {/* Sliding Drawer */}
+          <aside className="relative z-50 flex h-full w-72 max-w-[85vw] flex-col justify-between border-r border-border bg-sidebar p-5 shadow-2xl transition-transform animate-in slide-in-from-left duration-200">
+            {navContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

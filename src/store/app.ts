@@ -34,6 +34,8 @@ interface AppState {
 
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
 
   searchQuery: string;
   setSearchQuery: (q: string) => void;
@@ -49,7 +51,7 @@ export const useApp = create<AppState>((set, get) => {
 
   return {
     view: "chat",
-    setView: (view) => set({ view }),
+    setView: (view) => set({ view, mobileMenuOpen: false }),
 
     theme: (typeof window !== "undefined" && (localStorage.getItem("rp_theme") as "light" | "dark")) || "dark",
     setTheme: (theme) => {
@@ -89,6 +91,9 @@ export const useApp = create<AppState>((set, get) => {
 
     sidebarCollapsed: false,
     toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+
+    mobileMenuOpen: false,
+    setMobileMenuOpen: (mobileMenuOpen) => set({ mobileMenuOpen }),
 
     searchQuery: "",
     setSearchQuery: (searchQuery) => set({ searchQuery }),

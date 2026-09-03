@@ -300,18 +300,18 @@ export function OverviewView() {
       />
 
       {/* Strategic Goal & Constraint Card (Myntra Pink/Sunset Theme) */}
-      <div className="relative overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6 shadow-lg shadow-primary/5">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-4 sm:p-6 shadow-lg shadow-primary/5">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 sm:gap-6">
           <div className="space-y-2 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary text-white text-[11px] font-bold px-3 py-0.5 uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary text-white text-[10px] sm:text-[11px] font-bold px-2.5 sm:px-3 py-0.5 uppercase tracking-wider">
                 Strategic Goal
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-400 text-[11px] font-medium px-3 py-0.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-400 text-[10px] sm:text-[11px] font-medium px-2.5 sm:px-3 py-0.5">
                 Constraint: Zero Price-Slashing / No Monetary Incentives
               </span>
             </div>
-            <h3 className="font-heading text-lg sm:text-xl font-bold text-foreground">
+            <h3 className="font-heading text-base sm:text-xl font-bold text-foreground">
               Increase 30-Day Wishlist-to-Purchase Conversion Rate
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
@@ -319,17 +319,17 @@ export function OverviewView() {
             </p>
           </div>
 
-          <div className="flex flex-row lg:flex-col items-center lg:items-end gap-3 shrink-0">
-            <div className="text-right">
-              <p className="text-[11px] uppercase tracking-wider text-muted-foreground">30-Day Conversion</p>
+          <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between w-full lg:w-auto gap-3.5 shrink-0 pt-2 sm:pt-0 border-t border-primary/20 sm:border-0">
+            <div className="text-left sm:text-right">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground">30-Day Conversion</p>
               <div className="flex items-baseline gap-2">
-                <span className="font-heading text-2xl font-black text-foreground">9.4%</span>
+                <span className="font-heading text-xl sm:text-2xl font-black text-foreground">9.4%</span>
                 <span className="text-xs font-semibold text-emerald-400">→ Target: 22%</span>
               </div>
             </div>
             <Button
               onClick={() => setView("opportunities")}
-              className="gap-2 bg-primary hover:bg-primary/90 text-white font-semibold text-xs shadow-md shadow-primary/30"
+              className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 text-white font-semibold text-xs shadow-md shadow-primary/30"
             >
               Explore 6 Opportunity Areas
               <ArrowRight className="h-3.5 w-3.5" />
