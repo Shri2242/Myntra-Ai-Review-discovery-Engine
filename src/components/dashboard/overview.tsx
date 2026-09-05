@@ -169,8 +169,8 @@ export function OverviewView() {
         .slice()
         .sort((a, b) => b.count - a.count)
         .slice(0, 10)
-        .map((t) => ({ label: themeLabel(t.theme), count: t.count + Math.floor(extraReviewsCount / 5) })),
-    [stats, extraReviewsCount],
+        .map((t) => ({ label: themeLabel(t.theme), count: t.count })),
+    [stats],
   );
 
   /* Sources sorted by count, with display labels */
@@ -182,13 +182,13 @@ export function OverviewView() {
         .map((s) => ({
           source: s.source,
           label: SOURCE_LABELS[s.source] ?? s.source,
-          count: s.count + perChannelExtra,
+          count: s.count,
         })),
-    [stats, perChannelExtra],
+    [stats],
   );
   const sourceTotal = useMemo(
-    () => sourceData.reduce((a, s) => a + s.count, 0) || (175 + extraReviewsCount),
-    [sourceData, extraReviewsCount],
+    () => sourceData.reduce((a, s) => a + s.count, 0) || (stats?.totals?.total ?? 525),
+    [sourceData, stats],
   );
 
   /* Priorities in canonical order, capitalized */
@@ -342,7 +342,7 @@ export function OverviewView() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Fashion Reviews Analyzed"
-          value={((stats.totals.total || 175) + extraReviewsCount).toLocaleString()}
+          value={(stats.totals.total || 525).toLocaleString()}
           icon={<MessageSquare className="h-4 w-4" />}
           accent="blue"
           delta={totalDelta > 0 ? totalDelta : 18}

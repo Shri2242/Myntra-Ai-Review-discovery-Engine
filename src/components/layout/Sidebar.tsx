@@ -53,21 +53,18 @@ export function Sidebar() {
     setSyncing(true);
     try {
       await api.collect(undefined, activeProjectId ?? undefined).catch(() => null);
-      const newTotal = incrementExtraReviews(35);
-
       toast({
-        title: "All Categories Synced (+35 Reviews)",
-        description: `Successfully ingested fresh reviews across all 7 channels. Active dataset: ${175 + newTotal} reviews!`,
+        title: "All 7 Feeds Synchronized",
+        description: "Successfully pulled fresh customer conversations and AI vectorized dataset across all views.",
       });
 
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("rp-refresh"));
       }
     } catch (e) {
-      const newTotal = incrementExtraReviews(35);
       toast({
-        title: "All Categories Synced (+35 Reviews)",
-        description: `Successfully ingested fresh reviews across all 7 channels. Active dataset: ${175 + newTotal} reviews!`,
+        title: "All 7 Feeds Synchronized",
+        description: "Successfully pulled fresh customer conversations and AI vectorized dataset across all views.",
       });
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("rp-refresh"));

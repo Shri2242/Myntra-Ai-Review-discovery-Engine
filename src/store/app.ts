@@ -40,14 +40,18 @@ interface AppState {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
 
-  // Real-time review increment across manual pulls
   extraReviewsCount: number;
   incrementExtraReviews: (amount?: number) => number;
   resetExtraReviews: () => void;
 }
 
-export const useApp = create<AppState>((set, get) => {
-  const initialExtra = typeof window !== "undefined" ? Number(localStorage.getItem("rp_extra_reviews") || "0") : 0;
+export const useApp = create<AppState>((set) => {
+  // Clear any old legacy local storage drift so all devices match the server identically
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem("rp_extra_reviews");
+    } catch {}
+  }
 
   return {
     view: "chat",
@@ -66,8 +70,18 @@ export const useApp = create<AppState>((set, get) => {
       }
     },
     toggleTheme: () => {
-      const next = get().theme === "dark" ? "light" : "dark";
-      get().setTheme(next);
+      set((s) => {
+        const next = s.theme === "dark" ? "light" : "dark";
+        if (typeof window !== "undefined") {
+          localStorage.setItem("rp_theme", next);
+          if (next === "dark") {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        }
+        return { theme: next };
+      });
     },
 
     user: null,
@@ -98,18 +112,14 @@ export const useApp = create<AppState>((set, get) => {
     searchQuery: "",
     setSearchQuery: (searchQuery) => set({ searchQuery }),
 
-    extraReviewsCount: initialExtra,
-    incrementExtraReviews: (amount = 14) => {
-      const next = get().extraReviewsCount + amount;
-      set({ extraReviewsCount: next });
+    extraReviewsCount: 0,
+    incrementExtraReviews: () => {
       if (typeof window !== "undefined") {
-        localStorage.setItem("rp_extra_reviews", next.toString());
         window.dispatchEvent(new Event("rp-refresh"));
       }
-      return next;
+      return 0;
     },
     resetExtraReviews: () => {
-      set({ extraReviewsCount: 0 });
       if (typeof window !== "undefined") {
         localStorage.removeItem("rp_extra_reviews");
         window.dispatchEvent(new Event("rp-refresh"));
