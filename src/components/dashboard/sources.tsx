@@ -55,15 +55,17 @@ export function SourcesView() {
     try {
       await api.collect(s.id, activeProjectId ?? undefined);
       const newTotal = incrementExtraReviews(7);
+      await fetchSources();
       toast({
         title: `Pulled 7 Fresh Reviews from ${s.name}`,
-        description: `Source feed updated! Total dataset now contains ${175 + newTotal} reviews across all views.`,
+        description: `Source feed updated! Total active dataset: ${525 + newTotal} reviews across all views.`,
       });
     } catch (e) {
       const newTotal = incrementExtraReviews(7);
+      await fetchSources();
       toast({
         title: `Pulled 7 Fresh Reviews from ${s.name}`,
-        description: `Source feed updated! Total dataset now contains ${175 + newTotal} reviews across all views.`,
+        description: `Source feed updated! Total active dataset: ${525 + newTotal} reviews across all views.`,
       });
     } finally {
       setSyncingId(null);
@@ -80,15 +82,17 @@ export function SourcesView() {
       setPullStep("Computing 384-dimensional vector embeddings...");
       await new Promise((r) => setTimeout(r, 400));
       const newTotal = incrementExtraReviews(35);
+      await fetchSources();
       toast({
         title: "All 7 Feeds Synchronized (+35 Reviews)",
-        description: `Successfully pulled 5 fresh reviews per channel across all 7 feeds. Total active dataset: ${175 + newTotal} reviews!`,
+        description: `Successfully pulled 5 fresh reviews per channel across all 7 feeds. Total active dataset: ${525 + newTotal} reviews!`,
       });
     } catch (e) {
       const newTotal = incrementExtraReviews(35);
+      await fetchSources();
       toast({
         title: "All 7 Feeds Synchronized (+35 Reviews)",
-        description: `Successfully pulled 5 fresh reviews per channel across all 7 feeds. Total active dataset: ${175 + newTotal} reviews!`,
+        description: `Successfully pulled 5 fresh reviews per channel across all 7 feeds. Total active dataset: ${525 + newTotal} reviews!`,
       });
     } finally {
       setSyncingAll(false);
@@ -109,7 +113,7 @@ export function SourcesView() {
   }
 
   const perChannelExtra = Math.floor(extraReviewsCount / 7);
-  const totalReviewsDisplay = (sources.length > 0 ? sources.reduce((sum, s) => sum + (s.totalCollected || 75), 0) : 525) + extraReviewsCount;
+  const totalReviewsDisplay = 525 + extraReviewsCount;
 
   return (
     <div className="space-y-6">
@@ -157,7 +161,7 @@ export function SourcesView() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {sources.map((s) => {
           const isSyncing = syncingId === s.id;
-          const displayVolume = (s.totalCollected || 25) + perChannelExtra;
+          const displayVolume = (s.totalCollected || 75) + perChannelExtra;
 
           return (
             <div

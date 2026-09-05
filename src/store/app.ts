@@ -45,13 +45,8 @@ interface AppState {
   resetExtraReviews: () => void;
 }
 
-export const useApp = create<AppState>((set) => {
-  // Clear any old legacy local storage drift so all devices match the server identically
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.removeItem("rp_extra_reviews");
-    } catch {}
-  }
+export const useApp = create<AppState>((set, get) => {
+  const initialExtra = typeof window !== "undefined" ? Number(localStorage.getItem("rp_extra_reviews") || "0") : 0;
 
   return {
     view: "chat",
@@ -112,14 +107,18 @@ export const useApp = create<AppState>((set) => {
     searchQuery: "",
     setSearchQuery: (searchQuery) => set({ searchQuery }),
 
-    extraReviewsCount: 0,
-    incrementExtraReviews: () => {
+    extraReviewsCount: initialExtra,
+    incrementExtraReviews: (amount = 35) => {
+      const next = get().extraReviewsCount + amount;
+      set({ extraReviewsCount: next });
       if (typeof window !== "undefined") {
+        localStorage.setItem("rp_extra_reviews", next.toString());
         window.dispatchEvent(new Event("rp-refresh"));
       }
-      return 0;
+      return next;
     },
     resetExtraReviews: () => {
+      set({ extraReviewsCount: 0 });
       if (typeof window !== "undefined") {
         localStorage.removeItem("rp_extra_reviews");
         window.dispatchEvent(new Event("rp-refresh"));

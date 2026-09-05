@@ -152,7 +152,7 @@ export function SegmentsView() {
   const ratingCohorts = useMemo(() => {
     if (!data?.byRating) return [];
     const lowExtra = Math.round(extraReviewsCount * 0.32);
-    const midExtra = Math.round(extraReviewsCount * 0.2);
+    const midExtra = Math.round(extraReviewsCount * 0.20);
     const highExtra = extraReviewsCount - lowExtra - midExtra;
 
     return data.byRating.map((r, i) => {
