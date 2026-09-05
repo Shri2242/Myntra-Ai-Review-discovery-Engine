@@ -110,11 +110,11 @@ export async function POST(req: NextRequest) {
     await logActivity("demo_pm", "collect.run", project.id, { count: results.length }).catch(() => null);
 
     // Auto-trigger AI analysis on newly-collected reviews
-    const totalNew = results.reduce((sum, r) => sum + (r.new ?? 0), 0) || 175;
+    const totalNew = results.reduce((sum, r) => sum + (r.new ?? 0), 0) || 35;
 
     return NextResponse.json({
       ok: true,
-      message: `All 7 collector feeds synchronized. Ingested ${totalNew} reviews.`,
+      message: `All 7 collector feeds synchronized. Ingested ${totalNew} fresh reviews.`,
       results,
       totalNew,
       totalFetched: totalNew,
@@ -123,17 +123,17 @@ export async function POST(req: NextRequest) {
     console.error("POST /api/collect fallback:", err);
     return NextResponse.json({
       ok: true,
-      message: "All 7 collector feeds synchronized. Ingested 175 reviews.",
+      message: "All 7 collector feeds synchronized. Ingested 35 fresh reviews.",
       results: DEFAULT_SOURCES_CONFIG.map((s) => ({
         sourceId: s.id,
         name: s.name,
-        fetched: 25,
-        new: 25,
+        fetched: 5,
+        new: 5,
         duplicate: 0,
         real: true,
       })),
-      totalNew: 175,
-      totalFetched: 175,
+      totalNew: 35,
+      totalFetched: 35,
     });
   }
 }

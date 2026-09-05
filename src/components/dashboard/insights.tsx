@@ -90,10 +90,10 @@ export function InsightsView() {
   }
 
   const ws = insights?.weeklySummary ?? {
-    totalThisWeek: insights?.totalAnalyzed ?? 175,
-    bugCount: 42,
-    totalReviews: 175,
-    totalLastWeek: 148,
+    totalThisWeek: insights?.totalAnalyzed ?? 525,
+    bugCount: 126,
+    totalReviews: 525,
+    totalLastWeek: 480,
     topTheme: "Usability (Fit & Sizing)",
     negativeShare: 32,
     weekRange: "Past 7 Days",

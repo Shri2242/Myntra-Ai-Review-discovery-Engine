@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
       total = 0;
     }
 
-    // Fallback to rich in-memory dataset of 175 reviews if DB is fresh or empty
+    // Fallback to rich in-memory dataset of 525 reviews if DB is fresh or empty
     if (rows.length === 0 && total === 0) {
       let filtered = [...SEED_REVIEWS];
       if (sentiment) filtered = filtered.filter((r) => r.sentiment === sentiment);
