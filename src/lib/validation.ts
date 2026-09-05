@@ -42,6 +42,7 @@ export const updateRoleSchema = z.object({
 });
 
 export const createSourceSchema = z.object({
+  projectId: z.string().optional(),
   sourceType: z.enum(["google_play", "app_store", "reddit", "twitter", "youtube", "web_reviews"]),
   name: z.string().min(1).max(255),
   config: z.record(z.string(), z.unknown()).default({}),

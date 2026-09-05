@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const result = createSourceSchema.safeParse(body);
     if (!result.success) {
-      return NextResponse.json({ error: "Invalid payload", details: result.error.errors }, { status: 400 });
+      return NextResponse.json({ error: "Invalid payload", details: result.error.issues }, { status: 400 });
     }
 
     const { projectId, sourceType, name, config, enabled, schedule } = result.data;
