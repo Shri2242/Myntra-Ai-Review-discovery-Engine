@@ -46,7 +46,10 @@ interface AppState {
 }
 
 export const useApp = create<AppState>((set, get) => {
-  const initialExtra = typeof window !== "undefined" ? Number(localStorage.getItem("rp_extra_reviews") || "0") : 0;
+  // Clear any stale extra-reviews from localStorage so all devices always start at the same 525 baseline
+  if (typeof window !== "undefined") {
+    try { localStorage.removeItem("rp_extra_reviews"); } catch {}
+  }
 
   return {
     view: "chat",
@@ -107,12 +110,12 @@ export const useApp = create<AppState>((set, get) => {
     searchQuery: "",
     setSearchQuery: (searchQuery) => set({ searchQuery }),
 
-    extraReviewsCount: initialExtra,
+    // Always start at 0 — the 525 baseline is server-side. Sync adds reviews in-session only.
+    extraReviewsCount: 0,
     incrementExtraReviews: (amount = 35) => {
       const next = get().extraReviewsCount + amount;
       set({ extraReviewsCount: next });
       if (typeof window !== "undefined") {
-        localStorage.setItem("rp_extra_reviews", next.toString());
         window.dispatchEvent(new Event("rp-refresh"));
       }
       return next;
@@ -120,7 +123,6 @@ export const useApp = create<AppState>((set, get) => {
     resetExtraReviews: () => {
       set({ extraReviewsCount: 0 });
       if (typeof window !== "undefined") {
-        localStorage.removeItem("rp_extra_reviews");
         window.dispatchEvent(new Event("rp-refresh"));
       }
     },
