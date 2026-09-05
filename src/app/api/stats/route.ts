@@ -7,16 +7,16 @@ export const dynamic = "force-dynamic";
 function generateCurrentSentimentTrend() {
   return Array.from({ length: 30 }, (_, i) => {
     const d = new Date(Date.now() - (29 - i) * 86400000);
-    const pos = Math.floor(i / 6) + 3;
-    const neg = Math.floor(Math.random() * 2) + 1;
-    const neu = 1;
+    const pos = Math.floor(i / 2) + 9;
+    const neg = Math.floor(Math.random() * 3) + 4;
+    const neu = 3;
     return {
       date: d.toISOString().slice(0, 10),
       positive: pos,
       negative: neg,
       neutral: neu,
-      mixed: 0,
-      total: pos + neg + neu,
+      mixed: 1,
+      total: pos + neg + neu + 1,
     };
   });
 }
@@ -27,47 +27,47 @@ const DEFAULT_STATS_BASE = {
     name: "Myntra Fashion Discovery Engine",
     description: "Growth & product team initiative: analyze user feedback, wishlist patterns, and purchase friction on Myntra.",
   },
-  totals: { total: 175, processed: 175, bugs: 42, features: 70, sources: 7 },
+  totals: { total: 525, processed: 525, bugs: 126, features: 210, sources: 7 },
   bySentiment: [
-    { sentiment: "positive", count: 84 },
-    { sentiment: "negative", count: 56 },
-    { sentiment: "neutral", count: 28 },
-    { sentiment: "mixed", count: 7 },
+    { sentiment: "positive", count: 252 },
+    { sentiment: "negative", count: 168 },
+    { sentiment: "neutral", count: 84 },
+    { sentiment: "mixed", count: 21 },
   ],
   bySource: [
-    { source: "google_play", count: 25 },
-    { source: "app_store", count: 25 },
-    { source: "reddit", count: 25 },
-    { source: "youtube", count: 25 },
-    { source: "instagram", count: 25 },
-    { source: "twitter", count: 25 },
-    { source: "web_reviews", count: 25 },
+    { source: "google_play", count: 75 },
+    { source: "app_store", count: 75 },
+    { source: "reddit", count: 75 },
+    { source: "youtube", count: 75 },
+    { source: "instagram", count: 75 },
+    { source: "twitter", count: 75 },
+    { source: "web_reviews", count: 75 },
   ],
   byTheme: [
-    { theme: "Features", count: 56 },
-    { theme: "Usability", count: 42 },
-    { theme: "Content", count: 35 },
-    { theme: "Pricing", count: 28 },
-    { theme: "Support", count: 14 },
+    { theme: "Features", count: 168 },
+    { theme: "Usability", count: 126 },
+    { theme: "Content", count: 105 },
+    { theme: "Pricing", count: 84 },
+    { theme: "Support", count: 42 },
   ],
   byPriority: [
-    { priority: "critical", count: 14 },
-    { priority: "high", count: 49 },
-    { priority: "medium", count: 42 },
-    { priority: "low", count: 70 },
+    { priority: "critical", count: 42 },
+    { priority: "high", count: 147 },
+    { priority: "medium", count: 126 },
+    { priority: "low", count: 210 },
   ],
   byRating: [
-    { rating: 1, count: 14 },
-    { rating: 2, count: 42 },
-    { rating: 3, count: 35 },
-    { rating: 4, count: 42 },
-    { rating: 5, count: 42 },
+    { rating: 1, count: 42 },
+    { rating: 2, count: 126 },
+    { rating: 3, count: 105 },
+    { rating: 4, count: 126 },
+    { rating: 5, count: 126 },
   ],
   topIssues: [
-    { theme: "Sizing Variance", count: 42 },
-    { theme: "Fabric Translucency & Opacity", count: 28 },
-    { theme: "Lack of Split Spec Comparison", count: 21 },
-    { theme: "Flash Sale Checkout Timeouts", count: 14 },
+    { theme: "Sizing Variance", count: 126 },
+    { theme: "Fabric Translucency & Opacity", count: 84 },
+    { theme: "Lack of Split Spec Comparison", count: 63 },
+    { theme: "Flash Sale Checkout Timeouts", count: 42 },
   ],
 };
 

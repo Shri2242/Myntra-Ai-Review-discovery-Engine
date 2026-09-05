@@ -139,7 +139,7 @@ export function SegmentsView() {
   }, [activeProjectId]);
 
   const totalReviewsDisplay = useMemo(
-    () => (data?.total || 175) + extraReviewsCount,
+    () => (data?.total || 525) + extraReviewsCount,
     [data, extraReviewsCount],
   );
 

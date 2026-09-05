@@ -109,7 +109,7 @@ export function SourcesView() {
   }
 
   const perChannelExtra = Math.floor(extraReviewsCount / 7);
-  const totalReviewsDisplay = 175 + extraReviewsCount;
+  const totalReviewsDisplay = (sources.length > 0 ? sources.reduce((sum, s) => sum + (s.totalCollected || 75), 0) : 525) + extraReviewsCount;
 
   return (
     <div className="space-y-6">
